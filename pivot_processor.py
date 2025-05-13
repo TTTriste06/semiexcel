@@ -37,7 +37,7 @@ class PivotProcessor:
                         st.write(sheet_name)
                         # 读取 Excel 文件，从第 3 行（header=2）开始作为表头
                         mapping_df = pd.read_excel("新旧料号对照统计表-重要.xlsx", header=2)
-                        
+                        st.write(mapping_df)
                         # 替换前 9 个列名为指定字段
                         mapping_df.columns = [
                             "旧规格", "旧品名", "旧晶圆品名",
