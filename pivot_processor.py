@@ -39,12 +39,18 @@ class PivotProcessor:
                         mapping_df = additional_sheets["赛卓-新旧料号"]
                         st.write(mapping_df)
                         # 替换前 9 个列名为指定字段
-                        mapping_df.columns = [
-                            "旧规格", "旧品名", "旧晶圆品名",
-                            "新规格", "新品名", "新晶圆品名",
-                            "封装厂", "PC", "半成品"
-                        ] + list(mapping_df.columns[9:])  # 保留其他列名不变
-                        
+                        try:
+                            # 尝试重命名前9列
+                            mapping_df.columns = [
+                                "旧规格", "旧品名", "旧晶圆品名",
+                                "新规格", "新品名", "新晶圆品名",
+                                "封装厂", "PC", "半成品"
+                            ] + list(mapping_df.columns[9:])
+                        except Exception as e:
+                            st.error(f"❌ mapping_df 重命名列失败：{e}")
+                            st.write("当前列名为：", mapping_df.columns.tolist())
+                            return
+
                         # 可选：查看前几行验证
                         st.write(mapping_df)
                         df = apply_mapping_and_merge(df, mapping_df, FIELD_MAPPINGS[sheet_name])
