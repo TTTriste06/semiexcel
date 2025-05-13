@@ -1,10 +1,17 @@
+import os
 import pandas as pd
 from datetime import datetime, timedelta
 from config import CONFIG
 from excel_utils import adjust_column_width
 
 class PivotProcessor:
-    def process(self, uploaded_files: dict, output_buffer):
+    def process(self, uploaded_files: dict, output_buffer, additional_sheets: dict = None):
+        """
+        主处理函数：生成透视表并写入 Excel
+        - uploaded_files: 用户上传的主文件字典
+        - output_buffer: BytesIO 输出缓冲区
+        - additional_sheets: 额外需要写入的 DataFrame 表（如预测、安全库存、新旧料号）
+        """
         with pd.ExcelWriter(output_buffer, engine="openpyxl") as writer:
             for filename, file_obj in uploaded_files.items():
                 try:
@@ -18,11 +25,22 @@ class PivotProcessor:
                         df = self._process_date_column(df, date_col, config["date_format"])
 
                     pivoted = self._create_pivot(df, config)
-                    sheet_name = filename[:30].rstrip('.xlsx')
+                    sheet_name = filename[:30].replace(".xlsx", "")
                     pivoted.to_excel(writer, sheet_name=sheet_name, index=False)
                     adjust_column_width(writer, sheet_name, pivoted)
                 except Exception as e:
                     print(f"{filename} 处理失败: {e}")
+
+            # 写入附加 Sheet（预测、安全库存、新旧料号）
+            if additional_sheets:
+                for sheet_name, df in additional_sheets.items():
+                    try:
+                        df.to_excel(writer, sheet_name=sheet_name, index=False)
+                        adjust_column_width(writer, sheet_name, df)
+                        print(f"✅ 已写入附加 Sheet：{sheet_name}")
+                    except Exception as e:
+                        print(f"❌ 写入 {sheet_name} 失败: {e}")
+
         output_buffer.seek(0)
 
     def _process_date_column(self, df, date_col, date_format):
