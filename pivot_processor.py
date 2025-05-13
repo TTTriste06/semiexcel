@@ -23,55 +23,60 @@ class PivotProcessor:
                     df = pd.read_excel(file_obj)
                     config = CONFIG["pivot_config"].get(filename)
                     if not config:
+                        st.warning(f"⚠️ 跳过未配置的文件：{filename}")
                         continue
     
                     sheet_name = filename[:30].replace(".xlsx", "")
+                    st.write(f"📄 正在处理文件: `{filename}` → Sheet: `{sheet_name}`")
     
-                    # 日期预处理（如果需要）
+                    st.write(f"原始数据维度: {df.shape}")
+                    st.dataframe(df.head(3))
+    
+                    # 日期处理
                     if "date_format" in config:
                         date_col = config["columns"]
                         df = self._process_date_column(df, date_col, config["date_format"])
     
-                    # ⚠️ 如果在FIELD_MAPPINGS中，就执行替换逻辑
+                    # 映射替换（如果有）
                     if sheet_name in FIELD_MAPPINGS and "赛卓-新旧料号" in (additional_sheets or {}):
-                        st.write(sheet_name)
-                        # 读取 Excel 文件，从第 3 行（header=2）开始作为表头
                         mapping_df = additional_sheets["赛卓-新旧料号"]
-                        st.write(mapping_df)
-                        # 替换前 9 个列名为指定字段
+    
                         try:
-                            # 尝试重命名前9列
                             mapping_df.columns = [
                                 "旧规格", "旧品名", "旧晶圆品名",
                                 "新规格", "新品名", "新晶圆品名",
                                 "封装厂", "PC", "半成品"
                             ] + list(mapping_df.columns[9:])
+                            st.success(f"✅ `{sheet_name}` 正在进行新旧料号替换...")
                         except Exception as e:
-                            st.error(f"❌ mapping_df 重命名列失败：{e}")
-                            st.write("当前列名为：", mapping_df.columns.tolist())
-                            return
-
-                        # 可选：查看前几行验证
-                        st.write(mapping_df)
+                            st.error(f"❌ `{sheet_name}` 替换前列名失败：{e}")
+                            st.write("列名：", mapping_df.columns.tolist())
+                            continue
+    
                         df = apply_mapping_and_merge(df, mapping_df, FIELD_MAPPINGS[sheet_name])
-                        
+    
+                    # 构建透视表
                     pivoted = self._create_pivot(df, config)
+                    st.write(f"✅ Pivot 表创建成功，维度：{pivoted.shape}")
+                    st.dataframe(pivoted.head(3))
+    
                     pivoted.to_excel(writer, sheet_name=sheet_name, index=False)
                     adjust_column_width(writer, sheet_name, pivoted)
     
                 except Exception as e:
-                    print(f"{filename} 处理失败: {e}")
+                    st.error(f"❌ 文件 `{filename}` 处理失败: {e}")
     
-            # 附加 sheet（不透视）
+            # 写入附加 sheet（如预测、安全库存）
             if additional_sheets:
                 for sheet_name, df in additional_sheets.items():
                     if sheet_name == "赛卓-新旧料号":
-                        continue  # 不重复写入 mapping 表
+                        continue
                     try:
+                        st.write(f"📎 正在写入附加表：{sheet_name}，数据维度：{df.shape}")
                         df.to_excel(writer, sheet_name=sheet_name, index=False)
                         adjust_column_width(writer, sheet_name, df)
                     except Exception as e:
-                        print(f"❌ 写入 {sheet_name} 失败: {e}")
+                        st.error(f"❌ 写入附加 Sheet `{sheet_name}` 失败: {e}")
     
         output_buffer.seek(0)
 
