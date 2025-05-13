@@ -36,7 +36,7 @@ class PivotProcessor:
                     if sheet_name in FIELD_MAPPINGS and "赛卓-新旧料号" in (additional_sheets or {}):
                         st.write(sheet_name)
                         # 读取 Excel 文件，从第 3 行（header=2）开始作为表头
-                        mapping_df = pd.read_excel("新旧料号对照统计表-重要.xlsx", header=2)
+                        mapping_df = additional_sheets["赛卓-新旧料号"]
                         st.write(mapping_df)
                         # 替换前 9 个列名为指定字段
                         mapping_df.columns = [
