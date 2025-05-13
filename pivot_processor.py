@@ -103,7 +103,7 @@ class PivotProcessor:
         config = config.copy()
         if "date_format" in config:
             config["columns"] = f"{config['columns']}_年月"
-
+    
         pivoted = pd.pivot_table(
             df,
             index=config["index"],
@@ -112,5 +112,17 @@ class PivotProcessor:
             aggfunc=config["aggfunc"],
             fill_value=0
         )
-        pivoted.columns = [f"{col[0]}_{col[1]}" if isinstance(col, tuple) else col for col in pivoted.columns]
-        return pivoted.reset_index()
+    
+        # 合并多级列名（如 (订单数量, 2024-05) → 订单数量_2024-05）
+        pivoted.columns = [f"{col[0]}_{col[1]}" if isinstance(col, tuple) else str(col) for col in pivoted.columns]
+    
+        # 检查并处理重复列名
+        if pd.Series(pivoted.columns).duplicated().any():
+            from pandas.io.parsers import ParserBase
+            original_cols = pivoted.columns
+            deduped_cols = ParserBase({'names': original_cols})._maybe_dedup_names(original_cols)
+            pivoted.columns = deduped_cols
+    
+        # 重置 index 以避免 to_excel 出错
+        pivoted = pivoted.reset_index(drop=True)
+        return pivoted
