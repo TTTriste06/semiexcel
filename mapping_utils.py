@@ -2,73 +2,64 @@ import pandas as pd
 
 def apply_mapping_and_merge(df, mapping_df, field_map, verbose=True):
     """
-    将 DataFrame 中的三个主键列替换为新旧料号映射表中的新值，并对重复记录聚合（数值列求和）。
-
-    参数:
-    - df: 原始 DataFrame
-    - mapping_df: 包含 ["旧规格", "旧品名", "旧晶圆品名", "新规格", "新品名", "新晶圆品名"]
-    - field_map: 当前表格中列名与映射字段的对应关系，如 {"规格": "产品型号", ...}
-    - verbose: 是否输出替换信息
-
-    返回:
-    - 替换并聚合后的 DataFrame
+    用 key-based 显式映射方式将旧料号替换为新料号，并聚合相同行。
     """
 
-    spec_col = field_map["规格"]
-    name_col = field_map["品名"]
-    wafer_col = field_map["晶圆品名"]
+    # 原表字段
+    col_spec = field_map["规格"]
+    col_name = field_map["品名"]
+    col_wafer = field_map["晶圆品名"]
 
-    left_on = [spec_col, name_col, wafer_col]
-    right_on = ["旧规格", "旧品名", "旧晶圆品名"]
+    # 创建唯一 key（保证三个字段一致）
+    df["__key__"] = df[col_spec].astype(str) + "||" + df[col_name].astype(str) + "||" + df[col_wafer].astype(str)
+    mapping_df["__key__"] = (
+        mapping_df["旧规格"].astype(str) + "||" +
+        mapping_df["旧品名"].astype(str) + "||" +
+        mapping_df["旧晶圆品名"].astype(str)
+    )
 
-    try:
-        df_merged = df.merge(mapping_df, how="left", left_on=left_on, right_on=right_on)
+    # 构造 key → [新规格, 新品名, 新晶圆品名] 映射字典
+    mapping_dict = mapping_df.set_index("__key__")[["新规格", "新品名", "新晶圆品名"]].to_dict(orient="index")
 
-        # 打印匹配统计
-        matched = df_merged["新规格"].notna()
-        match_count = matched.sum()
-        unmatched_count = (~matched).sum()
+    # 执行替换
+    replaced_rows = 0
+    new_specs, new_names, new_wafers = [], [], []
+    for key in df["__key__"]:
+        if key in mapping_dict:
+            new_specs.append(mapping_dict[key]["新规格"])
+            new_names.append(mapping_dict[key]["新品名"])
+            new_wafers.append(mapping_dict[key]["新晶圆品名"])
+            replaced_rows += 1
+        else:
+            new_specs.append(None)
+            new_names.append(None)
+            new_wafers.append(None)
 
-        if verbose:
-            msg = f"🎯 成功替换 {match_count} 行；未匹配 {unmatched_count} 行"
-            try:
-                import streamlit as st
-                st.info(msg)
-            except:
-                print(msg)
+    # 替换字段（保留原值）
+    df[col_spec] = pd.Series(new_specs).combine_first(df[col_spec])
+    df[col_name] = pd.Series(new_names).combine_first(df[col_name])
+    df[col_wafer] = pd.Series(new_wafers).combine_first(df[col_wafer])
 
-        # 显示前几条未匹配记录（调试用）
-        if unmatched_count > 0 and verbose:
-            try:
-                print("⚠️ 未匹配示例（前 5 行）：")
-                print(df_merged[~matched][left_on].head())
-            except:
-                pass
+    if verbose:
+        try:
+            import streamlit as st
+            st.info(f"🔁 替换成功 {replaced_rows} 行；保留原值 {len(df) - replaced_rows} 行")
+        except:
+            print(f"🔁 替换成功 {replaced_rows} 行；保留原值 {len(df) - replaced_rows} 行")
 
-        # 替换三列值
-        df_merged[spec_col] = df_merged["新规格"].combine_first(df_merged[spec_col])
-        df_merged[name_col] = df_merged["新品名"].combine_first(df_merged[name_col])
-        df_merged[wafer_col] = df_merged["新晶圆品名"].combine_first(df_merged[wafer_col])
+    # 删除 key 列
+    df.drop(columns="__key__", inplace=True, errors="ignore")
 
-        # 删除映射中间列
-        drop_cols = ["旧规格", "旧品名", "旧晶圆品名", "新规格", "新品名", "新晶圆品名"]
-        df_cleaned = df_merged.drop(columns=[col for col in drop_cols if col in df_merged.columns])
+    # 聚合（数值列求和）
+    group_cols = [col_spec, col_name, col_wafer]
+    numeric_cols = df.select_dtypes(include="number").columns.difference(group_cols).tolist()
 
-        # 聚合：主键列相同的行合并
-        group_cols = [spec_col, name_col, wafer_col]
-        numeric_cols = df_cleaned.select_dtypes(include="number").columns.tolist()
-        sum_cols = [col for col in numeric_cols if col not in group_cols]
+    df_agg = df.groupby(group_cols, as_index=False)[numeric_cols].sum()
 
-        df_grouped = df_cleaned.groupby(group_cols, as_index=False)[sum_cols].sum()
+    # 处理其他非数值字段（保留第一个）
+    non_numeric_cols = df.columns.difference(group_cols + numeric_cols).tolist()
+    if non_numeric_cols:
+        df_first = df.groupby(group_cols, as_index=False)[non_numeric_cols].first()
+        df_agg = pd.merge(df_agg, df_first, on=group_cols, how="left")
 
-        # 保留其他字段（如单位、类型等）
-        other_cols = [col for col in df_cleaned.columns if col not in group_cols + sum_cols]
-        if other_cols:
-            df_first = df_cleaned.groupby(group_cols, as_index=False)[other_cols].first()
-            df_grouped = pd.merge(df_grouped, df_first, on=group_cols, how="left")
-
-        return df_grouped
-
-    except Exception as e:
-        print(f"❌ 替换失败: {e}")
-        return df
+    return df_agg
