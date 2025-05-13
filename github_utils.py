@@ -6,9 +6,6 @@ from io import BytesIO
 
 from config import GITHUB_TOKEN_KEY, REPO_NAME, BRANCH
 
-GITHUB_TOKEN = st.secrets[GITHUB_TOKEN_KEY]
-
-
 def upload_to_github(file, path_in_repo, commit_message):
     """
     将文件上传到 GitHub 仓库指定位置。
@@ -25,7 +22,7 @@ def upload_to_github(file, path_in_repo, commit_message):
     encoded_content = base64.b64encode(file_content).decode('utf-8')
 
     # 获取现有文件的 SHA（如果存在）
-    response = requests.get(api_url, headers={"Authorization": f"token {GITHUB_TOKEN}"})
+    response = requests.get(api_url, headers={"Authorization": f"token {st.secrets[GITHUB_TOKEN_KEY]}"})
     if response.status_code == 200:
         sha = response.json().get('sha')
     else:
