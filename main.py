@@ -42,11 +42,16 @@ def main():
     wrote_any_sheet = False  # 标志：是否至少写入了一个有效 sheet
 
     with pd.ExcelWriter(OUTPUT_FILE, engine='openpyxl') as writer:
+        st.write("🚧 uploaded_files =", uploaded_files)
+
         for f in uploaded_files:
             filename = f.name
             st.write(f"📂 正在处理文件: {filename}")
 
             if filename not in PIVOT_CONFIG:
+                st.write("✅ 上传的文件名：", [f.name for f in uploaded_files])
+                st.write("✅ PIVOT_CONFIG keys:", list(PIVOT_CONFIG.keys()))
+
                 st.warning(f"⚠️ 跳过未配置的文件: {filename}")
                 continue
 
@@ -66,6 +71,9 @@ def main():
                 missing_cols = [col for col in [spec_col, prod_col, wafer_col] if col not in df.columns]
                 if missing_cols:
                     st.warning(f"⚠️ 文件 {filename} 缺少必要列: {missing_cols}")
+                    st.write("实际列:", df.columns.tolist())
+                    st.write("映射要求:", spec_col, prod_col, wafer_col)
+
                     continue
 
                 df = apply_full_mapping(df, mapping_df, spec_col, prod_col, wafer_col)
