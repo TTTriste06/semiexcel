@@ -28,18 +28,21 @@ def main():
     else:
         safety_df = download_excel_from_repo("safety_file.xlsx")
     st.write(safety_df)
+    st.write(type(safety_df))
     if pred_file:
         pred_df = pd.read_excel(pred_file)
         upload_to_github(pred_file, "pred_file.xlsx", "上传预测文件")
     else:
         pred_df = download_excel_from_repo("pred_file.xlsx")
     st.write(pred_df)
+    st.write(type(pred_df))
     if mapping_file:
         mapping_df = pd.read_excel(mapping_file)
         upload_to_github(mapping_file, "mapping_file.xlsx", "上传新旧料号文件")
     else:
         mapping_df = download_excel_from_repo("mapping_file.xlsx")
     st.write(mapping_df)
+    st.write(type(mapping_df))
     
 
 
