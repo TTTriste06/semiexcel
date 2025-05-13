@@ -39,45 +39,60 @@ def main():
         mapping_df = download_excel_from_repo("mapping_file.xlsx")
 
     if st.button('🚀 提交并生成报告') and uploaded_files:
-        with pd.ExcelWriter(OUTPUT_FILE, engine='openpyxl') as writer:
-            summary_df = pd.DataFrame()
-            pending_df = None
+    wrote_any_sheet = False  # 标志：是否至少写入了一个有效 sheet
 
-            # 处理 uploaded_files
-            for f in uploaded_files:
-                filename = f.name
-                if filename not in PIVOT_CONFIG:
-                    st.warning(f"跳过未配置的文件: {filename}")
+    with pd.ExcelWriter(OUTPUT_FILE, engine='openpyxl') as writer:
+        for f in uploaded_files:
+            filename = f.name
+            st.write(f"📂 正在处理文件: {filename}")
+
+            if filename not in PIVOT_CONFIG:
+                st.warning(f"⚠️ 跳过未配置的文件: {filename}")
+                continue
+
+            try:
+                df = pd.read_excel(f)
+            except Exception as e:
+                st.error(f"❌ 无法读取 {filename}: {e}")
+                continue
+
+            # 映射料号替换
+            if filename in COLUMN_MAPPING:
+                mapping = COLUMN_MAPPING[filename]
+                spec_col = mapping["规格"]
+                prod_col = mapping["品名"]
+                wafer_col = mapping["晶圆品名"]
+
+                missing_cols = [col for col in [spec_col, prod_col, wafer_col] if col not in df.columns]
+                if missing_cols:
+                    st.warning(f"⚠️ 文件 {filename} 缺少必要列: {missing_cols}")
                     continue
 
-                df = pd.read_excel(f)
+                df = apply_full_mapping(df, mapping_df, spec_col, prod_col, wafer_col)
+            else:
+                st.info(f"ℹ️ 文件 {filename} 未定义映射字段，跳过 apply_full_mapping")
 
-                # 替换新旧料号
-                if filename in COLUMN_MAPPING:
-                    mapping = COLUMN_MAPPING[filename]
-                    spec_col, prod_col, wafer_col = mapping["规格"], mapping["品名"], mapping["晶圆品名"]
-                    if all(col in df.columns for col in [spec_col, prod_col, wafer_col]):
-                        df = apply_full_mapping(df, mapping_df, spec_col, prod_col, wafer_col)
-                    else:
-                        st.warning(f"⚠️ 文件 {filename} 缺少字段: {spec_col}, {prod_col}, {wafer_col}")
-                else:
-                    st.info(f"📂 文件 {filename} 未定义映射字段，跳过 apply_full_mapping")
+            # 创建透视表
+            pivot_config = PIVOT_CONFIG[filename]
+            pivoted = create_pivot(df, pivot_config, filename, mapping_df)
 
-                # 透视表处理
-                pivot_config = PIVOT_CONFIG[filename]
-                pivoted = create_pivot(df, pivot_config, filename, mapping_df)
-    
-                # 写入 Excel（sheet name 去掉 .xlsx 后缀）
-                sheet_name = filename.replace(".xlsx", "")
-                pivoted.to_excel(writer, sheet_name=sheet_name)
-    
-                st.success(f"📊 已处理并写入: {sheet_name}")
-    
-            st.success("✅ 所有文件处理完毕，正在生成报告...")
-    
-        # 下载按钮
-        with open(OUTPUT_FILE, "rb") as f:
-            st.download_button("📥 下载汇总报告", f, file_name=OUTPUT_FILE)
+            if pivoted is None or pivoted.empty:
+                st.warning(f"⚠️ 文件 {filename} 的透视结果为空，未写入 Excel")
+                continue
+
+            sheet_name = filename.replace(".xlsx", "")[:31]  # Excel 限制 sheet 名最多 31 字符
+            pivoted.to_excel(writer, sheet_name=sheet_name)
+            wrote_any_sheet = True
+            st.success(f"✅ 写入 sheet: {sheet_name}，共 {pivoted.shape[0]} 行")
+
+        # 如果一个有效 sheet 都没有写入，添加保底空页防止崩溃
+        if not wrote_any_sheet:
+            st.warning("⚠️ 所有文件都未处理成功，写入空白页避免报错")
+            pd.DataFrame({"提示": ["未处理任何有效数据"]}).to_excel(writer, sheet_name="无数据")
+
+    # 下载按钮
+    with open(OUTPUT_FILE, "rb") as f:
+        st.download_button("📥 下载汇总报告", f, file_name=OUTPUT_FILE)
 
 
     
