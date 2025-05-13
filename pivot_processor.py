@@ -16,45 +16,45 @@ FIELD_MAPPINGS = {
 
 class PivotProcessor:
     def process(self, uploaded_files: dict, output_buffer, additional_sheets: dict = None):
-    with pd.ExcelWriter(output_buffer, engine="openpyxl") as writer:
-        for filename, file_obj in uploaded_files.items():
-            try:
-                df = pd.read_excel(file_obj)
-                config = CONFIG["pivot_config"].get(filename)
-                if not config:
-                    continue
-
-                sheet_name = filename[:30].replace(".xlsx", "")
-
-                # 日期预处理（如果需要）
-                if "date_format" in config:
-                    date_col = config["columns"]
-                    df = self._process_date_column(df, date_col, config["date_format"])
-
-                # ⚠️ 如果在FIELD_MAPPINGS中，就执行替换逻辑
-                if sheet_name in FIELD_MAPPINGS and "赛卓-新旧料号" in (additional_sheets or {}):
-                    mapping_df = additional_sheets["赛卓-新旧料号"]
-                    df = apply_mapping_and_merge(df, mapping_df, FIELD_MAPPINGS[sheet_name])
-
-                pivoted = self._create_pivot(df, config)
-                pivoted.to_excel(writer, sheet_name=sheet_name, index=False)
-                adjust_column_width(writer, sheet_name, pivoted)
-
-            except Exception as e:
-                print(f"{filename} 处理失败: {e}")
-
-        # 附加 sheet（不透视）
-        if additional_sheets:
-            for sheet_name, df in additional_sheets.items():
-                if sheet_name == "赛卓-新旧料号":
-                    continue  # 不重复写入 mapping 表
+        with pd.ExcelWriter(output_buffer, engine="openpyxl") as writer:
+            for filename, file_obj in uploaded_files.items():
                 try:
-                    df.to_excel(writer, sheet_name=sheet_name, index=False)
-                    adjust_column_width(writer, sheet_name, df)
+                    df = pd.read_excel(file_obj)
+                    config = CONFIG["pivot_config"].get(filename)
+                    if not config:
+                        continue
+    
+                    sheet_name = filename[:30].replace(".xlsx", "")
+    
+                    # 日期预处理（如果需要）
+                    if "date_format" in config:
+                        date_col = config["columns"]
+                        df = self._process_date_column(df, date_col, config["date_format"])
+    
+                    # ⚠️ 如果在FIELD_MAPPINGS中，就执行替换逻辑
+                    if sheet_name in FIELD_MAPPINGS and "赛卓-新旧料号" in (additional_sheets or {}):
+                        mapping_df = additional_sheets["赛卓-新旧料号"]
+                        df = apply_mapping_and_merge(df, mapping_df, FIELD_MAPPINGS[sheet_name])
+    
+                    pivoted = self._create_pivot(df, config)
+                    pivoted.to_excel(writer, sheet_name=sheet_name, index=False)
+                    adjust_column_width(writer, sheet_name, pivoted)
+    
                 except Exception as e:
-                    print(f"❌ 写入 {sheet_name} 失败: {e}")
-
-    output_buffer.seek(0)
+                    print(f"{filename} 处理失败: {e}")
+    
+            # 附加 sheet（不透视）
+            if additional_sheets:
+                for sheet_name, df in additional_sheets.items():
+                    if sheet_name == "赛卓-新旧料号":
+                        continue  # 不重复写入 mapping 表
+                    try:
+                        df.to_excel(writer, sheet_name=sheet_name, index=False)
+                        adjust_column_width(writer, sheet_name, df)
+                    except Exception as e:
+                        print(f"❌ 写入 {sheet_name} 失败: {e}")
+    
+        output_buffer.seek(0)
 
     def _process_date_column(self, df, date_col, date_format):
         if pd.api.types.is_numeric_dtype(df[date_col]):
