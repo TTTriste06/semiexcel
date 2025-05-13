@@ -35,7 +35,18 @@ class PivotProcessor:
                     # ⚠️ 如果在FIELD_MAPPINGS中，就执行替换逻辑
                     if sheet_name in FIELD_MAPPINGS and "赛卓-新旧料号" in (additional_sheets or {}):
                         st.write(sheet_name)
-                        mapping_df = additional_sheets["赛卓-新旧料号"]
+                        # 读取 Excel 文件，从第 3 行（header=2）开始作为表头
+                        mapping_df = pd.read_excel("新旧料号对照统计表-重要.xlsx", header=2)
+                        
+                        # 替换前 9 个列名为指定字段
+                        mapping_df.columns = [
+                            "旧规格", "旧品名", "旧晶圆品名",
+                            "新规格", "新品名", "新晶圆品名",
+                            "封装厂", "PC", "半成品"
+                        ] + list(mapping_df.columns[9:])  # 保留其他列名不变
+                        
+                        # 可选：查看前几行验证
+                        st.write(mapping_df.head())
                         df = apply_mapping_and_merge(df, mapping_df, FIELD_MAPPINGS[sheet_name])
                         
                     pivoted = self._create_pivot(df, config)
