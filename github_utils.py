@@ -6,29 +6,21 @@ from io import BytesIO
 
 from config import GITHUB_TOKEN_KEY, REPO_NAME, BRANCH
 
+
 def upload_to_github(file, path_in_repo, commit_message):
     """
-    将文件上传到 GitHub 仓库指定位置。
-
-    参数：
-    - file: BytesIO 文件对象或上传的 file-like 对象
-    - path_in_repo: 仓库内路径（包括文件名）
-    - commit_message: 提交信息
+    上传文件到 GitHub 指定仓库与路径。
     """
     api_url = f"https://api.github.com/repos/{REPO_NAME}/contents/{path_in_repo}"
 
-    file.seek(0)  # 确保指针在开头
+    file.seek(0)
     file_content = file.read()
     encoded_content = base64.b64encode(file_content).decode('utf-8')
 
-    # 获取现有文件的 SHA（如果存在）
+    # 获取文件 SHA（如果已存在）
     response = requests.get(api_url, headers={"Authorization": f"token {st.secrets[GITHUB_TOKEN_KEY]}"})
-    if response.status_code == 200:
-        sha = response.json().get('sha')
-    else:
-        sha = None
+    sha = response.json().get('sha') if response.status_code == 200 else None
 
-    # 构造提交 payload
     payload = {
         "message": commit_message,
         "content": encoded_content,
@@ -37,14 +29,12 @@ def upload_to_github(file, path_in_repo, commit_message):
     if sha:
         payload["sha"] = sha
 
-    # PUT 请求上传文件
     response = requests.put(api_url, json=payload, headers={"Authorization": f"token {st.secrets[GITHUB_TOKEN_KEY]}"})
 
-    # 提示用户结果
     if response.status_code in [200, 201]:
-        st.success(f"✅ {path_in_repo} 上传成功！")
+        st.success(f"{path_in_repo} 上传成功！")
     else:
-        st.error(f"❌ 上传失败：{response.status_code} - {response.json().get('message', '未知错误')}")
+        st.error(f"上传失败: {response.json()}")
 
 def download_excel_from_repo(filename, show_warning=True):
     """
