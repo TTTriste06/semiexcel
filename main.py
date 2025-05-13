@@ -74,7 +74,15 @@ def main():
 
             # 创建透视表
             pivot_config = PIVOT_CONFIG[filename]
-            pivoted = create_pivot(df, pivot_config, filename, mapping_df)
+            pivoted = create_pivot(df, config, filename, mapping_df)
+
+            if pivoted is not None and not pivoted.empty:
+                st.write(f"✅ {filename} 透视表生成成功，行数: {pivoted.shape[0]}")
+                pivoted.to_excel(writer, sheet_name=sheet_name)
+                wrote_any_sheet = True
+            else:
+                st.warning(f"⚠️ {filename} 的透视表为空，未写入")
+
 
             if pivoted is None or pivoted.empty:
                 st.warning(f"⚠️ 文件 {filename} 的透视结果为空，未写入 Excel")
