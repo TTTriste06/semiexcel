@@ -47,11 +47,6 @@ def upload_to_github(file, path_in_repo, commit_message):
         st.error(f"❌ 上传失败：{response.status_code} - {response.json().get('message', '未知错误')}")
 
 def download_excel_from_repo(path_in_repo):
-    from config import GITHUB_TOKEN_KEY, REPO_NAME, BRANCH
-    import streamlit as st
-    import requests
-    from io import BytesIO
-
     try:
         GITHUB_TOKEN = st.secrets[GITHUB_TOKEN_KEY]
     except Exception as e:
