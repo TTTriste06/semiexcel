@@ -9,7 +9,7 @@ from config import (
     FULL_MAPPING_COLUMNS, COLUMN_MAPPING
 )
 from github_utils import upload_to_github, download_excel_from_repo
-
+from prepare import apply_full_mapping
 
 def main():
     st.set_page_config(page_title='数据汇总自动化工具', layout='wide')
