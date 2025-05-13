@@ -47,20 +47,26 @@ def upload_to_github(file, path_in_repo, commit_message):
         st.error(f"❌ 上传失败：{response.status_code} - {response.json().get('message', '未知错误')}")
 
 def download_excel_from_repo(path_in_repo):
-    """
-    从 GitHub 仓库下载指定路径的文件，并返回 BytesIO 对象。
+    from config import GITHUB_TOKEN_KEY, REPO_NAME, BRANCH
+    import streamlit as st
+    import requests
+    from io import BytesIO
 
-    参数：
-    - path_in_repo: 仓库中的文件路径（包括文件名）
+    try:
+        GITHUB_TOKEN = st.secrets[GITHUB_TOKEN_KEY]
+    except Exception as e:
+        st.error("❌ 无法加载 GitHub Token，请检查 secrets 配置")
+        return None
 
-    返回：
-    - BytesIO 对象（可用于 pd.read_excel）
-    """
     raw_url = f"https://raw.githubusercontent.com/{REPO_NAME}/{BRANCH}/{path_in_repo}"
-    response = requests.get(raw_url, headers={"Authorization": f"token {st.secrets[GITHUB_TOKEN_KEY]}"})
+    response = requests.get(raw_url, headers={"Authorization": f"token {GITHUB_TOKEN}"})
 
     if response.status_code == 200:
         return BytesIO(response.content)
     else:
-        st.error(f"❌ 下载失败：{response.status_code} - {response.json().get('message', '未知错误')}")
+        try:
+            error_message = response.json().get("message", "未知错误")
+        except ValueError:
+            error_message = response.text[:200]  # 截取前 200 字符，避免爆长
+        st.error(f"❌ 下载失败：{response.status_code} - {error_message}")
         return None
