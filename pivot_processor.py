@@ -57,8 +57,10 @@ class PivotProcessor:
     
                     # 构建透视表
                     pivoted = self._create_pivot(df, config)
-                    st.write(f"✅ Pivot 表创建成功，维度：{pivoted.shape}")
-                    st.dataframe(pivoted.head(3))
+                    pivoted_display = pivoted.reset_index(drop=True)
+                    st.write(f"✅ Pivot 表创建成功，维度：{pivoted_display.shape}")
+                    st.dataframe(pivoted_display.head(3))
+
     
                     pivoted.to_excel(writer, sheet_name=sheet_name, index=False)
                     adjust_column_width(writer, sheet_name, pivoted)
