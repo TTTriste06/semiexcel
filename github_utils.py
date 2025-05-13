@@ -46,22 +46,25 @@ def upload_to_github(file, path_in_repo, commit_message):
     else:
         st.error(f"❌ 上传失败：{response.status_code} - {response.json().get('message', '未知错误')}")
 
-def download_excel_from_repo(path_in_repo):
+def download_excel_from_repo(filename, show_warning=True):
+    """
+    从 GitHub 仓库中下载 Excel 文件（支持私有 repo），使用 GitHub API。
+    """
+    api_url = f"https://api.github.com/repos/{REPO_NAME}/contents/{filename}"
+    headers = {"Authorization": f"token {st.secrets[GITHUB_TOKEN_KEY]}"}
+    response = requests.get(api_url, headers=headers)
+
+    if response.status_code != 200:
+        if show_warning:
+            st.warning(f"⚠️ 无法下载 {filename}，返回码 {response.status_code}")
+        return pd.DataFrame()
+
     try:
-        GITHUB_TOKEN = st.secrets[GITHUB_TOKEN_KEY]
+        content = base64.b64decode(response.json()['content'])
+        df = pd.read_excel(BytesIO(content))
     except Exception as e:
-        st.error("❌ 无法加载 GitHub Token，请检查 secrets 配置")
-        return None
+        if show_warning:
+            st.warning(f"⚠️ 解析 {filename} 失败：{e}")
+        return pd.DataFrame()
 
-    raw_url = f"https://raw.githubusercontent.com/{REPO_NAME}/{BRANCH}/{path_in_repo}"
-    response = requests.get(raw_url, headers={"Authorization": f"token {GITHUB_TOKEN}"})
-
-    if response.status_code == 200:
-        return BytesIO(response.content)
-    else:
-        try:
-            error_message = response.json().get("message", "未知错误")
-        except ValueError:
-            error_message = response.text[:200]  # 截取前 200 字符，避免爆长
-        st.error(f"❌ 下载失败：{response.status_code} - {error_message}")
-        return None
+    return df
