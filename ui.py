@@ -10,7 +10,7 @@ def setup_sidebar():
         st.markdown('- 一键导出 Excel 汇总报告')
 
 def get_uploaded_files():
-    st.markdown("### 📤 请上传以下 5 个 Excel 文件：")
+    st.markdown("### Excel 数据处理与汇总工具")
     expected_files = {
         "赛卓-未交订单.xlsx",
         "赛卓-成品在制.xlsx",
