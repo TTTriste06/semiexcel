@@ -38,7 +38,7 @@ def upload_to_github(file, path_in_repo, commit_message):
         payload["sha"] = sha
 
     # PUT 请求上传文件
-    response = requests.put(api_url, json=payload, headers={"Authorization": f"token {GITHUB_TOKEN}"})
+    response = requests.put(api_url, json=payload, headers={"Authorization": f"token {st.secrets[GITHUB_TOKEN_KEY]}"})
 
     # 提示用户结果
     if response.status_code in [200, 201]:
@@ -57,7 +57,7 @@ def download_excel_from_repo(path_in_repo):
     - BytesIO 对象（可用于 pd.read_excel）
     """
     raw_url = f"https://raw.githubusercontent.com/{REPO_NAME}/{BRANCH}/{path_in_repo}"
-    response = requests.get(raw_url, headers={"Authorization": f"token {GITHUB_TOKEN}"})
+    response = requests.get(raw_url, headers={"Authorization": f"token {st.secrets[GITHUB_TOKEN_KEY]}"})
 
     if response.status_code == 200:
         return BytesIO(response.content)
