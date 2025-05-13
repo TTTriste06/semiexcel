@@ -48,7 +48,6 @@ def apply_mapping_and_merge(df, mapping_df, field_map, verbose=True):
 
     if verbose:
         try:
-            import streamlit as st
             st.info(f"🔁 替换成功 {replaced_rows} 行；保留原值 {len(df) - replaced_rows} 行")
         except:
             print(f"🔁 替换成功 {replaced_rows} 行；保留原值 {len(df) - replaced_rows} 行")
