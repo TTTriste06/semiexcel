@@ -10,7 +10,7 @@ def main():
     setup_sidebar()
 
     uploaded_files, start = get_uploaded_files()
-
+    
     if start:
         if len(uploaded_files) < 5:
             st.error("❌ 请上传所有 5 个文件后再点击生成！")
