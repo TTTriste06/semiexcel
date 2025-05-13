@@ -46,7 +46,7 @@ class PivotProcessor:
                         ] + list(mapping_df.columns[9:])  # 保留其他列名不变
                         
                         # 可选：查看前几行验证
-                        st.write(mapping_df.head())
+                        st.write(mapping_df)
                         df = apply_mapping_and_merge(df, mapping_df, FIELD_MAPPINGS[sheet_name])
                         
                     pivoted = self._create_pivot(df, config)
