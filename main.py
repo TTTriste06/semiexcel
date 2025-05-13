@@ -55,7 +55,7 @@ def main():
         st.download_button(
             label="📥 下载 Excel 汇总报告",
             data=buffer.getvalue(),
-            file_name=file_ts_name,
+            file_name=file_name,
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
