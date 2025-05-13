@@ -1,6 +1,5 @@
 import os
 import pandas as pd
-import streamlit as st
 from datetime import datetime, timedelta
 from config import CONFIG
 from excel_utils import adjust_column_width
@@ -34,7 +33,6 @@ class PivotProcessor:
 
                 # ⚠️ 如果在FIELD_MAPPINGS中，就执行替换逻辑
                 if sheet_name in FIELD_MAPPINGS and "赛卓-新旧料号" in (additional_sheets or {}):
-                    st.write(sheet_name)
                     mapping_df = additional_sheets["赛卓-新旧料号"]
                     df = apply_mapping_and_merge(df, mapping_df, FIELD_MAPPINGS[sheet_name])
 
