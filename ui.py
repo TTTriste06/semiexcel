@@ -11,19 +11,25 @@ def setup_sidebar():
 
 def get_uploaded_files():
     st.markdown("### 📤 请上传以下 5 个 Excel 文件：")
-    expected_files = [
+    expected_files = {
         "赛卓-未交订单.xlsx",
         "赛卓-成品在制.xlsx",
         "赛卓-CP在制.xlsx",
         "赛卓-成品库存.xlsx",
         "赛卓-晶圆库存.xlsx"
-    ]
+    }
 
-    uploaded_files = {}
-    for filename in expected_files:
-        uploaded_file = st.file_uploader(f"上传 {filename}", type=["xlsx"], key=filename)
-        if uploaded_file:
-            uploaded_files[filename] = uploaded_file
+    uploaded_file_list = st.file_uploader(
+        "上传 5 个 Excel 文件",
+        type=["xlsx"],
+        accept_multiple_files=True
+    )
+
+    uploaded_files = {f.name: f for f in uploaded_file_list} if uploaded_file_list else {}
+
+    missing_files = expected_files - uploaded_files.keys()
+    if missing_files:
+        st.warning(f"⚠️ 缺少文件: {', '.join(missing_files)}")
 
     st.markdown("---")
     start = st.button("🚀 生成汇总报告")
