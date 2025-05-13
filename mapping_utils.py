@@ -18,6 +18,11 @@ def apply_mapping_and_merge(df, mapping_df, field_map, verbose=True):
         mapping_df["旧晶圆品名"].astype(str)
     )
 
+    # 打印出前几行 key 做对比
+    st.write("原始表 Key 示例：", df["__key__"].head().tolist())
+    st.write("新旧料号 Key 示例：", mapping_df["__key__"].head().tolist())
+
+
     # 构造 key → [新规格, 新品名, 新晶圆品名] 映射字典
     mapping_dict = mapping_df.set_index("__key__")[["新规格", "新品名", "新晶圆品名"]].to_dict(orient="index")
 
