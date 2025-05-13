@@ -10,7 +10,7 @@ def setup_sidebar():
         st.markdown('- 一键导出 Excel 汇总报告')
 
 def get_uploaded_files():
-    st.markdown("### Excel 数据处理与汇总工具")
+    st.markdown("### 📤 请上传以下 5 个 Excel 文件：")
     expected_files = {
         "赛卓-未交订单.xlsx",
         "赛卓-成品在制.xlsx",
@@ -31,6 +31,11 @@ def get_uploaded_files():
     if missing_files:
         st.warning(f"⚠️ 缺少文件: {', '.join(missing_files)}")
 
+    st.markdown("### 📊 上传辅助文件（可选，若不上传则使用历史版本）")
+    forecast_file = st.file_uploader("📈 赛卓-预测.xlsx", type=["xlsx"], key="forecast")
+    safety_stock_file = st.file_uploader("🛡️ 赛卓-安全库存.xlsx", type=["xlsx"], key="safety")
+    mapping_file = st.file_uploader("🔁 赛卓-新旧料号.xlsx", type=["xlsx"], key="mapping")
+
     st.markdown("---")
     start = st.button("🚀 生成汇总报告")
-    return uploaded_files, start
+    return uploaded_files, forecast_file, safety_stock_file, mapping_file, start
