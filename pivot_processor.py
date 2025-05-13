@@ -36,14 +36,6 @@ class PivotProcessor:
                         mapping_df = additional_sheets["赛卓-新旧料号"]
                         df = apply_mapping_and_merge(df, mapping_df, FIELD_MAPPINGS[sheet_name])
                         
-                        # ✅ 打印成功替换的表名
-                        print(f"✅ 表格 [{sheet_name}] 成功应用新旧料号映射")
-                        try:
-                            import streamlit as st
-                            st.info(f"✅ 表格 [{sheet_name}] 已完成新旧料号替换")
-                        except:
-                            pass  # 兼容非 Streamlit 环境
-
                     pivoted = self._create_pivot(df, config)
                     pivoted.to_excel(writer, sheet_name=sheet_name, index=False)
                     adjust_column_width(writer, sheet_name, pivoted)
