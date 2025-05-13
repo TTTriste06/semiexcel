@@ -38,7 +38,13 @@ def main():
     else:
         mapping_df = download_excel_from_repo("mapping_file.xlsx")
 
-    if st.button('🚀 提交并生成报告') and uploaded_files:
+    if st.button('🚀 提交并生成报告'):
+        st.write("✅ 按钮已点击")
+    
+        if not uploaded_files:
+            st.warning("⚠️ 请先上传核心 Excel 文件！")
+            return
+
         wrote_any_sheet = False  # 标志：是否至少写入了一个有效 sheet
     
         with pd.ExcelWriter(OUTPUT_FILE, engine='openpyxl') as writer:
