@@ -1,14 +1,20 @@
 import streamlit as st
 import pandas as pd
-from openpyxl import load_workbook
 
-from ui import setup_sidebar, get_user_inputs
+st.set_page_config(page_title='数据汇总自动化工具', layout='wide')
+st.write("✅ 已加载主页面配置")
+
+from openpyxl import load_workbook
 from config import (
     GITHUB_TOKEN_KEY, REPO_NAME, BRANCH,
     CONFIG, OUTPUT_FILE, PIVOT_CONFIG,
     FULL_MAPPING_COLUMNS, COLUMN_MAPPING
 )
+st.write("✅ 已导入配置")
+
 from github_utils import upload_to_github, download_excel_from_repo
+from ui import setup_sidebar, get_user_inputs
+st.write("✅ 已导入 github_utils 和 ui")
 
 def main():
     st.set_page_config(page_title='数据汇总自动化工具', layout='wide')
