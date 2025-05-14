@@ -102,6 +102,15 @@ class PivotProcessor:
                             summary_preview = append_forecast_to_summary(summary_preview, df_forecast)
                             st.success("✅ 已合并预测数据")
 
+                            # 追加成品库存信息
+                            df_finished = additional_sheets["赛卓-成品库存"]
+                            summary_preview = merge_finished_inventory(summary_preview, df_finished)
+                            st.success("✅ 已合并成品库存")
+
+                            
+
+
+                            
                             # 写入“汇总” sheet
                             summary_preview.to_excel(writer, sheet_name="汇总", index=False)
                             adjust_column_width(writer, "汇总", summary_preview)
@@ -134,7 +143,8 @@ class PivotProcessor:
                                 {
                                     "安全库存": (" InvWaf", " InvPart"),
                                     "未交订单": (unfulfilled_cols[0], unfulfilled_cols[-1]),
-                                    "预测": (forecast_cols[0], forecast_cols[-1])
+                                    "预测": (forecast_cols[0], forecast_cols[-1]),
+                                    "成品库存": ("数量_HOLD仓", "数量_成品仓", "数量_半成品仓")
                                 }
                             )
                         except Exception as e:
