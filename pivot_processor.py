@@ -25,7 +25,7 @@ class PivotProcessor:
         with pd.ExcelWriter(output_buffer, engine="openpyxl") as writer:
             for filename, file_obj in uploaded_files.items():
                 try:
-                    if name == "赛卓-预测.xlsx":
+                    if filename == "赛卓-预测.xlsx":
                         df = pd.read_excel(file_io, header=1)
                     else:
                         df = pd.read_excel(file_obj)
