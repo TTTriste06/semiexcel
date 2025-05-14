@@ -155,11 +155,19 @@ class PivotProcessor:
                             )]
                             st.write(unfulfilled_cols)
 
-                             # ✅ 找出所有“预测”相关列（顺序保留）
+                            # ✅ 找出所有“预测”相关列（顺序保留）
                             forecast_cols = [col for col in header_row if (
                                 "预测" in col
                             )]
                             st.write(forecast_cols)
+
+                            # ✅ 找出所有“成品库存”相关列（顺序保留）
+                            finished_cols = [col for col in header_row if (
+                                col == "数量_HOLD仓" or 
+                                col == "数量_成品仓" or 
+                                col == "数量_半成品仓"
+                            )]
+                            st.write(finished_cols)
 
 
                             merge_header_for_summary(
@@ -169,7 +177,7 @@ class PivotProcessor:
                                     "安全库存": (" InvWaf", " InvPart"),
                                     "未交订单": (unfulfilled_cols[0], unfulfilled_cols[-1]),
                                     "预测": (forecast_cols[0], forecast_cols[-1]),
-                                    "成品库存": ("数量_HOLD仓", "数量_成品仓", "数量_半成品仓")
+                                    "成品库存": (finished_cols[0], finished_cols[1])
                                 }
                             )
                         except Exception as e:
