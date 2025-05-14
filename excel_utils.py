@@ -1,5 +1,7 @@
+from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment, Font
+from openpyxl.styles import PatternFill
 
 def adjust_column_width(writer, sheet_name, df):
     """
@@ -52,4 +54,24 @@ def merge_header_for_summary(ws, df, label_ranges):
         cell.value = label
         cell.alignment = Alignment(horizontal="center", vertical="center")
         cell.font = Font(bold=True)
+
+def highlight_unused_rows(ws, used_key_set, wafer_col=1, spec_col=2, name_col=3):
+    """
+    标红不在 used_key_set 中的所有行。
+    
+    参数：
+    - ws: openpyxl worksheet 对象（如“赛卓-成品库存”）
+    - used_key_set: 被使用过的主键集合（tuple: 晶圆品名, 规格, 品名）
+    - wafer_col, spec_col, name_col: 三个主键所在的列号（Excel起始为1）
+    """
+    red_fill = PatternFill(start_color="FF9999", end_color="FF9999", fill_type="solid")
+    for row in range(3, ws.max_row + 1):
+        wafer = str(ws.cell(row=row, column=wafer_col).value).strip()
+        spec = str(ws.cell(row=row, column=spec_col).value).strip()
+        name = str(ws.cell(row=row, column=name_col).value).strip()
+        if (wafer, spec, name) not in used_key_set:
+            for col in range(1, ws.max_column + 1):
+                ws.cell(row=row, column=col).fill = red_fill
+    return ws
+
 
