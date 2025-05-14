@@ -63,3 +63,33 @@ def append_unfulfilled_summary_columns(summary_df, pivoted_df):
     merged = summary_df.merge(unfulfilled_df, on=["晶圆品名", "规格", "品名"], how="left")
 
     return merged
+
+def append_forecast_to_summary(summary_df, forecast_df):
+    """
+    从预测表中提取每月预测值，合并到汇总表后面。
+
+    参数:
+    - summary_df: 汇总表，含晶圆品名、规格、品名
+    - forecast_df: 预测表（header=1，含“产品型号”、“ProductionNO.”、“晶圆品名”及月份列）
+
+    返回:
+    - 增加预测列的 summary_df
+    """
+    # 第二行为 header
+    forecast_df.columns = forecast_df.iloc[0]
+    forecast_df = forecast_df[1:].copy()
+
+    forecast_df = forecast_df.rename(columns={
+        "产品型号": "规格",
+        "ProductionNO.": "品名"
+    })
+
+    forecast_df = forecast_df[["晶圆品名", "规格", "品名"] + 
+                               [col for col in forecast_df.columns if isinstance(col, str) and "-" in col]]
+
+    # 去重预测索引列
+    forecast_df = forecast_df.drop_duplicates(subset=["晶圆品名", "规格", "品名"])
+
+    # 合并到 summary 表
+    merged = summary_df.merge(forecast_df, on=["晶圆品名", "规格", "品名"], how="left")
+    return merged
