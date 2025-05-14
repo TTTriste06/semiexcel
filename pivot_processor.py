@@ -102,8 +102,9 @@ class PivotProcessor:
                             
                             # 追加安全库存信息
                             df_safety = additional_sheets["赛卓-安全库存"]
-                            summary_preview = merge_safety_inventory(summary_preview, df_safety, writer=writer)
+                            summary_preview, unmatched_safety = merge_safety_inventory(summary_preview, df_safety)
                             st.success("✅ 已合并安全库存数据")
+                            st.write(unmatched_safety)
         
                             # 追加未交订单信息
                             summary_preview = append_unfulfilled_summary_columns(summary_preview, pivoted)
