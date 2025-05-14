@@ -103,9 +103,22 @@ class PivotProcessor:
                             st.success("✅ 已合并预测数据")
 
                             # 追加成品库存信息
-                            df_finished = df_finished = pd.read_excel(uploaded_files["赛卓-成品库存.xlsx"], sheet_name="赛卓-成品库存")
-
-                        
+                            # 读取原始 Excel 数据
+                            df_finished_raw = pd.read_excel(uploaded_files["赛卓-成品库存.xlsx"], sheet_name=0)
+                            df_finished_raw.columns = df_finished_raw.columns.str.strip()
+                            
+                            # 构造透视配置
+                            config_finished = {
+                                "index": ["晶圆品名", "规格", "品名"],
+                                "columns": "仓库名称",
+                                "values": "数量",
+                                "aggfunc": "sum"
+                            }
+                            
+                            # 调用已有方法透视
+                            df_finished = self._create_pivot(df_finished_raw, config_finished)
+                            
+                            # 合并进汇总表
                             st.write(df_finished)
                             summary_preview = merge_finished_inventory(summary_preview, df_finished)
                             st.success("✅ 已合并成品库存")
