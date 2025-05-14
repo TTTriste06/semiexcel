@@ -6,6 +6,7 @@ from config import CONFIG
 from excel_utils import adjust_column_width
 from mapping_utils import apply_mapping_and_merge
 from month_selector import process_history_columns
+from summary import merge_safety_inventory
 
 FIELD_MAPPINGS = {
     "赛卓-未交订单": {"规格": "规格", "品名": "品名", "晶圆品名": "晶圆品名"},
