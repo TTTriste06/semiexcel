@@ -1,11 +1,12 @@
 import os
+import re
 import pandas as pd
 import streamlit as st
 from datetime import datetime, timedelta
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment, Font
 from config import CONFIG
-from excel_utils import adjust_column_width
+from excel_utils import adjust_column_width, merge_header_for_summary
 from mapping_utils import apply_mapping_and_merge
 from month_selector import process_history_columns
 from summary import merge_safety_inventory, append_unfulfilled_summary_columns
@@ -82,31 +83,36 @@ class PivotProcessor:
                             # 追加未交订单信息
                             summary_preview = append_unfulfilled_summary_columns(summary_preview, pivoted)
 
-
                             # 写入“汇总” sheet
                             summary_preview.to_excel(writer, sheet_name="汇总", index=False)
                             adjust_column_width(writer, "汇总", summary_preview)
                             st.success("✅ 已写入汇总Sheet")
 
+
                             # 打开 worksheet 进行格式化
                             ws = writer.sheets["汇总"]
-                            
-                            # 插入一行在最上方（标题行下移）
-                            ws.insert_rows(1)
-                            
-                            # 找到 InvWaf 和 InvPart 列的列号
                             header_row = list(summary_preview.columns)
-                            inv_start = header_row.index(" InvWaf") + 1  # Excel列号从1开始
-                            inv_end = header_row.index(" InvPart") + 1
                             
-                            # 合并单元格并写入“安全库存”
-                            merge_range = f"{get_column_letter(inv_start)}1:{get_column_letter(inv_end)}1"
-                            ws.merge_cells(merge_range)
-                            ws[get_column_letter(inv_start) + "1"].value = "安全库存"
+                            # ✅ 找出所有“未交订单”相关列（顺序保留）
+                            unfulfilled_cols = [col for col in header_row if (
+                                col == "总未交订单" or 
+                                col == "历史未交订单数量" or 
+                                re.match(r"未交订单数量_\\d{4}-\\d{2}", col)
+                            )]
                             
-                            # 设置样式
-                            ws[get_column_letter(inv_start) + "1"].alignment = Alignment(horizontal="center", vertical="center")
-                            ws[get_column_letter(inv_start) + "1"].font = Font(bold=True)
+                            # ✅ 确定合并范围首尾列名
+                            if unfulfilled_cols:
+                                start_col = unfulfilled_cols[0]
+                                end_col = unfulfilled_cols[-1]
+                            
+                                merge_header_for_summary(
+                                    ws,
+                                    summary_preview,
+                                    {
+                                        "安全库存": (" InvWaf", " InvPart"),
+                                        "未交订单": (start_col, end_col)
+                                    }
+                                )
                         except Exception as e:
                             st.error(f"❌ 写入汇总失败: {e}")
 
