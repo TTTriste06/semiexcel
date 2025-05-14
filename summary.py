@@ -100,29 +100,26 @@ def append_forecast_to_summary(summary_df, forecast_df):
 
 def merge_finished_inventory(summary_df, finished_df):
     """
-    将指定三列成品库存数据合并进汇总表。
+    将成品库存的数量列（HOLD仓、成品仓、半成品仓）合并进汇总表
     """
     import streamlit as st
 
     try:
-        # ✅ 重命名主键列
+        # ✅ 重命名主键列（用于匹配）
         finished_df = finished_df.rename(columns={
             "WAFER品名": "晶圆品名",
         })
 
+        # ✅ 匹配字段
         key_cols = ["晶圆品名", "规格", "品名"]
 
-        # ✅ 明确要提取的三列（顺序和命名与实际一致）
-        inventory_cols = ["数量_HOLD仓", "数量_成品仓", "数量_半成品仓"]
+        # ✅ 选择需要的列
+        value_cols = [col for col in finished_df.columns if col.startswith("数量_")]
 
-        # ✅ 检查是否都存在
-        for col in inventory_cols:
-            if col not in finished_df.columns:
-                st.warning(f"⚠️ 成品库存中缺失列：{col}")
-                return summary_df
+        st.write("🔍 成品库存合并字段：", value_cols)
 
         merged = summary_df.merge(
-            finished_df[key_cols + inventory_cols],
+            finished_df[key_cols + value_cols],
             on=key_cols,
             how="left"
         )
