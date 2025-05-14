@@ -165,7 +165,7 @@ class PivotProcessor:
             # 写入附加 sheet（如预测、安全库存）
             if additional_sheets:
                 for sheet_name, df in additional_sheets.items():
-                    if sheet_name == "赛卓-新旧料号":
+                    if sheet_name == "赛卓-新旧料号" or sheet_name == "赛卓-成品库存":
                         continue
                     try:
                         st.write(f"📎 正在写入附加表：{sheet_name}，数据维度：{df.shape}")
