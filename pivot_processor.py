@@ -8,7 +8,7 @@ from config import CONFIG
 from excel_utils import adjust_column_width
 from mapping_utils import apply_mapping_and_merge
 from month_selector import process_history_columns
-from summary import merge_safety_inventory
+from summary import merge_safety_inventory, append_unfulfilled_summary_columns
 
 FIELD_MAPPINGS = {
     "赛卓-未交订单": {"规格": "规格", "品名": "品名", "晶圆品名": "晶圆品名"},
@@ -76,10 +76,12 @@ class PivotProcessor:
                             summary_preview = df[["晶圆品名", "规格", "品名"]].drop_duplicates().reset_index(drop=True)
                             
                             # 如果有安全库存 sheet，进行合并
-                            if additional_sheets and "赛卓-安全库存" in additional_sheets:
-                                df_safety = additional_sheets["赛卓-安全库存"]
-                                summary_preview = merge_safety_inventory(summary_preview, df_safety)
-                                st.success("✅ 安全库存信息已合并至汇总 Sheet")
+                            df_safety = additional_sheets["赛卓-安全库存"]
+                            summary_preview = merge_safety_inventory(summary_preview, df_safety)
+
+                            # 追加未交订单信息
+                            summary_preview = append_unfulfilled_summary_columns(summary_preview, pivoted)
+
 
                             # 写入“汇总” sheet
                             summary_preview.to_excel(writer, sheet_name="汇总", index=False)
