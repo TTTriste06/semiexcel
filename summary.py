@@ -64,8 +64,6 @@ def append_unfulfilled_summary_columns(summary_df, pivoted_df):
 
     return merged
 
-import streamlit as st
-
 def append_forecast_to_summary(summary_df, forecast_df):
     """
     从预测表中提取与 summary_df 匹配的预测记录，仅提取一行预测（每组主键）。
