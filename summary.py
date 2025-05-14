@@ -66,16 +66,10 @@ def append_unfulfilled_summary_columns(summary_df, pivoted_df):
 
 def append_forecast_to_summary(summary_df, forecast_df):
     """
-    从预测表中提取每月预测值，合并到汇总表后面。
-
-    参数:
-    - summary_df: 汇总表，含晶圆品名、规格、品名
-    - forecast_df: 预测表（header=1，含“产品型号”、“ProductionNO.”、“晶圆品名”及月份列）
-
-    返回:
-    - 增加预测列的 summary_df
+    从预测表中提取与 summary_df 匹配的预测记录，仅提取一个匹配行（避免多对一），并合并每月数据。
     """
-    # 第二行为 header
+
+    # 第2行为header
     forecast_df.columns = forecast_df.iloc[0]
     forecast_df = forecast_df[1:].copy()
 
@@ -84,12 +78,15 @@ def append_forecast_to_summary(summary_df, forecast_df):
         "ProductionNO.": "品名"
     })
 
-    forecast_df = forecast_df[["晶圆品名", "规格", "品名"] + 
-                               [col for col in forecast_df.columns if isinstance(col, str) and "-" in col]]
+    # 只保留主键+预测列
+    key_cols = ["晶圆品名", "规格", "品名"]
+    month_cols = [col for col in forecast_df.columns if isinstance(col, str) and "预测" in col]
 
-    # 去重预测索引列
-    forecast_df = forecast_df.drop_duplicates(subset=["晶圆品名", "规格", "品名"])
+    forecast_df = forecast_df[key_cols + month_cols]
 
-    # 合并到 summary 表
-    merged = summary_df.merge(forecast_df, on=["晶圆品名", "规格", "品名"], how="left")
+    # 只保留每组主键的第一条记录（避免重复）
+    forecast_df = forecast_df.drop_duplicates(subset=key_cols, keep="first")
+
+    # 合并
+    merged = summary_df.merge(forecast_df, on=key_cols, how="left")
     return merged
