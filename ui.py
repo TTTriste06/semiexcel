@@ -36,6 +36,7 @@ def get_uploaded_files():
     safety_stock_file = st.file_uploader("🛡️ 赛卓-安全库存.xlsx", type=["xlsx"], key="safety")
     mapping_file = st.file_uploader("🔁 赛卓-新旧料号.xlsx", type=["xlsx"], key="mapping")
 
+    uploaded_dict = {}
     # ✅ 动态生成未交订单的月份选择框
     if "赛卓-未交订单.xlsx" in uploaded_dict:
         try:
