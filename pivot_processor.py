@@ -118,12 +118,13 @@ class PivotProcessor:
                             # 调用已有方法透视
                             df_finished = self._create_pivot(df_finished_raw, config_finished)
 
-                            # 加前缀："数量_" + 仓库名称
+                            # ✅ 添加前缀：数量_
                             cols_to_rename = {
                                 col: f"数量_{col}"
                                 for col in df_finished.columns
-                                if col not in ["晶圆品名", "规格", "品名"]  # 三个主键不要改
+                                if col not in ["晶圆品名", "规格", "品名"]
                             }
+                            df_finished = df_finished.rename(columns=cols_to_rename)
                             
                             # 合并进汇总表
                             st.write(df_finished)
