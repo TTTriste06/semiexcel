@@ -5,34 +5,47 @@ import streamlit as st
 def merge_safety_inventory(summary_df, safety_df):
     """
     将安全库存表中 Wafer 和 Part 信息合并到汇总数据中。
-    
+    同时标红安全库存表中未被用到的行。
+
     参数:
     - summary_df: 汇总后的未交订单表，包含 '晶圆品名'、'规格'、'品名'
     - safety_df: 安全库存表，包含 'WaferID', 'OrderInformation', 'ProductionNO.', ' InvWaf', ' InvPart'
-    
+
     返回:
-    - 合并后的汇总 DataFrame，增加了 ' InvWaf' 和 ' InvPart' 两列
+    - merged_df: 合并后的汇总 DataFrame，增加了 ' InvWaf' 和 ' InvPart' 两列
+    - unused_rows_df: 安全库存表中未被匹配的行，用于标红显示
     """
 
-    # 重命名列用于匹配
+    # 重命名以便与 summary_df 匹配
     safety_df = safety_df.rename(columns={
         'WaferID': '晶圆品名',
         'OrderInformation': '规格',
         'ProductionNO.': '品名'
     }).copy()
 
-    # 添加标记列（可选，用于调试或统计）
-    safety_df['已匹配'] = False
-
-    # 合并：left join 确保 summary_df 保留所有行
-    merged = summary_df.merge(
+    # 执行 merge 操作（不会修改 safety_df）
+    merged_df = summary_df.merge(
         safety_df[['晶圆品名', '规格', '品名', ' InvWaf', ' InvPart']],
         on=['晶圆品名', '规格', '品名'],
         how='left'
     )
 
-    return merged
+    # 创建一个用于识别安全库存是否被使用的标记
+    key_cols = ['晶圆品名', '规格', '品名']
+    merged_keys = merged_df[key_cols].drop_duplicates()
+    safety_keys = safety_df[key_cols]
 
+    # 使用 merge + indicator 来找出未被使用的行
+    marked = safety_keys.merge(
+        merged_keys,
+        on=key_cols,
+        how='left',
+        indicator=True
+    )
+    unused_mask = marked['_merge'] == 'left_only'
+    unused_rows_df = safety_df.merge(marked[unused_mask][key_cols], on=key_cols, how='inner')
+
+    return merged_df, unused_rows_df
 
 def append_unfulfilled_summary_columns(summary_df, pivoted_df):
     """
