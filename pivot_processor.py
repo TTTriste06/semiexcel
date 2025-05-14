@@ -102,9 +102,7 @@ class PivotProcessor:
                             st.write(unfulfilled_cols)
 
                             # ✅ 找出所有“预测”相关列（顺序保留）
-                            forecast_cols = [col for col in header_row if (
-                                "预测" in col
-                            )]
+                            forecast_cols = [col for col in header_row if "预测" in col
                             st.write(forecast_cols)
 
                             if unfulfilled_cols and forecast_cols:
