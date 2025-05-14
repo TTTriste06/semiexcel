@@ -64,6 +64,17 @@ class PivotProcessor:
     
                     pivoted.to_excel(writer, sheet_name=sheet_name, index=False)
                     adjust_column_width(writer, sheet_name, pivoted)
+
+                    # ✅ 如果当前是“未交订单”sheet，则拷贝前三列到新 sheet
+                    if sheet_name == "赛卓-未交订单":
+                        try:
+                            summary_preview = df.iloc[:, :3].drop_duplicates().reset_index(drop=True)
+                            summary_preview.to_excel(writer, sheet_name="未交订单索引", index=False)
+                            adjust_column_width(writer, "未交订单索引", summary_preview)
+                            st.success("✅ 已写入未交订单索引 Sheet")
+                        except Exception as e:
+                            st.error(f"❌ 写入未交订单索引失败: {e}")
+
     
                 except Exception as e:
                     st.error(f"❌ 文件 `{filename}` 处理失败: {e}")
@@ -87,17 +98,6 @@ class PivotProcessor:
                     except Exception as e:
                         st.error(f"❌ 写入附加 Sheet `{sheet_name}` 失败: {e}")
 
-            
-            try:
-                if "赛卓-未交订单.xlsx" in uploaded_files:
-                    df_unfulfilled = pd.read_excel(uploaded_files["赛卓-未交订单.xlsx"])
-                    summary_preview = df_unfulfilled.iloc[:, :3].drop_duplicates().reset_index(drop=True)
-                    summary_preview.to_excel(writer, sheet_name="汇总", index=False)
-                    adjust_column_width(writer, "汇总", summary_preview)
-                    st.success("✅ 已写入汇总")
-            except Exception as e:
-                st.error(f"❌ 写入汇总失败: {e}")
-    
         output_buffer.seek(0)
 
     def _process_date_column(self, df, date_col, date_format):
