@@ -5,6 +5,7 @@ import streamlit as st
 from datetime import datetime, timedelta
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment, Font
+from openpyxl import load_workbook
 from config import CONFIG
 from excel_utils import adjust_column_width, merge_header_for_summary
 from mapping_utils import apply_mapping_and_merge
@@ -99,7 +100,7 @@ class PivotProcessor:
 
                             # 追加安全库存信息
                             df_safety = additional_sheets["赛卓-安全库存"]
-                            summary_preview = merge_safety_inventory(summary_preview, df_safety)
+                            summary_df, safety_unused = merge_safety_inventory(summary_df, safety_df)
                             st.success("✅ 已合并安全库存数据")
 
                             # 追加未交订单信息
@@ -125,7 +126,7 @@ class PivotProcessor:
                             summary_preview = append_product_in_progress(summary_preview, product_in_progress, mapping_df)
                             st.success("✅ 已合并成品在制")
 
-                
+
 
                             
 
@@ -176,23 +177,21 @@ class PivotProcessor:
                                 }
                             )
 
-                            # ✅ 提取汇总中使用过的主键
-                            used_keys = collect_used_keys_from_summary(summary_preview)
+
+                            # 保存并标红
+                            with pd.ExcelWriter(output_path, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+                                # 写入完整的安全库存表
+                                safety_df.to_excel(writer, sheet_name='赛卓-安全库存', index=False)
                             
-                            # ✅ 标红五个 sheet 中未被使用的行
-                            sheet_settings = {
-                                "赛卓-安全库存": (1, 2, 3),
-                                "赛卓-未交订单": (1, 2, 3),
-                                "赛卓-预测": (1, 2, 3),
-                                "赛卓-成品库存": (1, 2, 3),
-                                "赛卓-成品在制": (3, 4, 5)  # 前两列是“工作中心”、“封装形式”，主键从第3列开始
-                            }
+                                # 获取 worksheet
+                                workbook = writer.book
+                                worksheet = writer.sheets['赛卓-安全库存']
                             
-                            for sheet_name, (wafer_col, spec_col, name_col) in sheet_settings.items():
-                                if sheet_name in writer.sheets:
-                                    st.info(f"🔍 正在标红未被使用的行：{sheet_name}")
-                                    ws_target = writer.sheets[sheet_name]
-                                    highlight_unused_rows(ws_target, used_keys, wafer_col, spec_col, name_col)
+                                # 标红未匹配的行
+                                highlight_unused_safety_rows(worksheet, safety_df, safety_unused_df)
+                            
+                                # 保存 workbook
+                                writer._save()
 
                         except Exception as e:
                             st.error(f"❌ 写入汇总失败: {e}")
