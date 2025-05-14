@@ -145,8 +145,8 @@ class PivotProcessor:
         # 重置 index 以避免 to_excel 出错
         pivoted = pivoted.reset_index()
 
-        # ✅ 历史订单数量处理逻辑（仅限未交订单）
-        if CONFIG.get("selected_month") and config.get("columns") and "未交订单" in config["values"]:
+        # ✅ 仅对未交订单表触发历史数据合并
+        if CONFIG.get("selected_month") and config.get("values") and "未交订单数量" in config.get("values"):
+            st.info(f"📅 合并历史数据至：{CONFIG['selected_month']}")
             pivoted = process_history_columns(pivoted, config, CONFIG["selected_month"])
-        
         return pivoted
