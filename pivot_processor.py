@@ -143,8 +143,7 @@ class PivotProcessor:
                                 {
                                     "安全库存": (" InvWaf", " InvPart"),
                                     "未交订单": (unfulfilled_cols[0], unfulfilled_cols[-1]),
-                                    "预测": (forecast_cols[0], forecast_cols[-1]),
-                                    "成品库存": ("数量_HOLD仓", "数量_成品仓", "数量_半成品仓")
+                                    "预测": (forecast_cols[0], forecast_cols[-1])
                                 }
                             )
                         except Exception as e:
