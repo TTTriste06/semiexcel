@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from config import CONFIG
 from excel_utils import adjust_column_width
 from mapping_utils import apply_mapping_and_merge
+from month_selector import process_history_columns
 
 FIELD_MAPPINGS = {
     "赛卓-未交订单": {"规格": "规格", "品名": "品名", "晶圆品名": "晶圆品名"},
@@ -143,4 +144,9 @@ class PivotProcessor:
     
         # 重置 index 以避免 to_excel 出错
         pivoted = pivoted.reset_index()
+
+        # ✅ 历史订单数量处理逻辑（仅限未交订单）
+        if CONFIG.get("selected_month") and config.get("columns") and "未交订单" in config["values"]:
+            pivoted = process_history_columns(pivoted, config, CONFIG["selected_month"])
+        
         return pivoted
