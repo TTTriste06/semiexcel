@@ -132,7 +132,25 @@ class PivotProcessor:
                             st.success("✅ 已合并成品库存")
 
                             # 追加成品在制信息
-                            summary_preview = append_product_in_progress(summary_preview, product_in_progress_pivoted, mapping_df)
+                            # 读取原始 Excel 数据
+                            product_in_progress_raw = pd.read_excel(uploaded_files["赛卓-成品在制.xlsx"], sheet_name=0)
+                            product_in_progress_raw.columns = product_in_progress_raw.columns.str.strip()
+                            
+                            # 构造透视配置
+                            config_progress = {
+                                "index": ["工作中心", "封装形式", "晶圆型号", "产品规格", "产品品名"],
+                                "columns": "预计完工日期",
+                                "values": ["未交"],
+                                "aggfunc": "sum"
+                            }
+                            
+                            # 调用已有方法透视
+                            product_in_progress = self._create_pivot(product_in_progress_raw, config_progress)
+                            
+                            # 合并进汇总表
+                            st.write(product_in_progress)
+                            summary_preview = append_product_in_progress(summary_preview, product_in_progress, mapping_df)
+                            st.success("✅ 已合并成品在制")
 
                 
 
