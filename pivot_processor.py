@@ -99,8 +99,7 @@ class PivotProcessor:
                             
 
                             # 追加安全库存信息
-                            df_safety = additional_sheets["赛卓-安全库存"]
-                            summary_preview, safety_unused = merge_safety_inventory(summary_df, safety_df)
+                            summary_preview = merge_safety_inventory(summary_preview, df_safety, writer=writer)
                             st.success("✅ 已合并安全库存数据")
 
                             # 追加未交订单信息
@@ -177,21 +176,6 @@ class PivotProcessor:
                                 }
                             )
 
-
-                            # 保存并标红
-                            with pd.ExcelWriter(output_path, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
-                                # 写入完整的安全库存表
-                                safety_df.to_excel(writer, sheet_name='赛卓-安全库存', index=False)
-                            
-                                # 获取 worksheet
-                                workbook = writer.book
-                                worksheet = writer.sheets['赛卓-安全库存']
-                            
-                                # 标红未匹配的行
-                                highlight_unused_safety_rows(worksheet, safety_df, safety_unused_df)
-                            
-                                # 保存 workbook
-                                writer._save()
 
                         except Exception as e:
                             st.error(f"❌ 写入汇总失败: {e}")
