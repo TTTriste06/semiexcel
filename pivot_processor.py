@@ -9,7 +9,7 @@ from config import CONFIG
 from excel_utils import adjust_column_width, merge_header_for_summary
 from mapping_utils import apply_mapping_and_merge
 from month_selector import process_history_columns
-from summary import merge_safety_inventory, append_unfulfilled_summary_columns, append_forecast_to_summary, merge_finished_inventory
+from summary import merge_safety_inventory, append_unfulfilled_summary_columns, append_forecast_to_summary, merge_finished_inventory, append_product_in_progress
 
 FIELD_MAPPINGS = {
     "赛卓-未交订单": {"规格": "规格", "品名": "品名", "晶圆品名": "晶圆品名"},
@@ -130,6 +130,10 @@ class PivotProcessor:
                             st.write(df_finished)
                             summary_preview = merge_finished_inventory(summary_preview, df_finished)
                             st.success("✅ 已合并成品库存")
+
+                            # 追加成品在制信息
+                            summary_preview = append_product_in_progress(summary_preview, product_in_progress_pivoted, mapping_df)
+
                 
 
                             
