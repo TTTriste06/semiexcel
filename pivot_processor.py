@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment, Font
 from config import CONFIG
-from excel_utils import adjust_column_width, merge_header_for_summary, highlight_unused_rows
+from excel_utils import adjust_column_width, merge_header_for_summary, collect_used_keys_from_summary, highlight_unused_rows
 from mapping_utils import apply_mapping_and_merge
 from month_selector import process_history_columns
 from summary import merge_safety_inventory, append_unfulfilled_summary_columns, append_forecast_to_summary, merge_finished_inventory, append_product_in_progress
@@ -169,6 +169,25 @@ class PivotProcessor:
                                     "成品库存": (finished_cols[0], finished_cols[-1])
                                 }
                             )
+
+                            # ✅ 提取汇总中使用过的主键
+                            used_keys = collect_used_keys_from_summary(summary_preview)
+                            
+                            # ✅ 标红五个 sheet 中未被使用的行
+                            sheet_settings = {
+                                "赛卓-安全库存": (1, 2, 3),
+                                "赛卓-未交订单": (1, 2, 3),
+                                "赛卓-预测": (1, 2, 3),
+                                "赛卓-成品库存": (1, 2, 3),
+                                "赛卓-成品在制": (3, 4, 5)  # 前两列是“工作中心”、“封装形式”，主键从第3列开始
+                            }
+                            
+                            for sheet_name, (wafer_col, spec_col, name_col) in sheet_settings.items():
+                                if sheet_name in writer.sheets:
+                                    st.info(f"🔍 正在标红未被使用的行：{sheet_name}")
+                                    ws_target = writer.sheets[sheet_name]
+                                    highlight_unused_rows(ws_target, used_keys, wafer_col, spec_col, name_col)
+
                         except Exception as e:
                             st.error(f"❌ 写入汇总失败: {e}")
 
