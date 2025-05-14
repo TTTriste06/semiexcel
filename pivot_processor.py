@@ -7,7 +7,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment, Font
 from openpyxl import load_workbook
 from config import CONFIG
-from excel_utils import adjust_column_width, merge_header_for_summary
+from excel_utils import adjust_column_width, merge_header_for_summary, mark_unmatched_keys_on_sheet
 from mapping_utils import apply_mapping_and_merge
 from month_selector import process_history_columns
 from summary import (
@@ -103,35 +103,40 @@ class PivotProcessor:
                             # 追加安全库存信息
                             df_safety = additional_sheets["赛卓-安全库存"]
                             summary_preview, unmatched_safety = merge_safety_inventory(summary_preview, df_safety)
+                            ws = writer.sheets["赛卓-安全库存"]
+                            mark_unmatched_keys_on_sheet(ws, unmatched_safety, wafer_col=1, spec_col=2, name_col=3)
                             st.success("✅ 已合并安全库存数据")
-                            st.write(unmatched_safety)
         
                             # 追加未交订单信息
-                            summary_preview = append_unfulfilled_summary_columns(summary_preview, pivoted)
+                            summary_preview, unmatched_unfulfilled = append_unfulfilled_summary_columns(summary_preview, pivoted)
+                            ws = writer.sheets["赛卓-未交订单"]
+                            mark_unmatched_keys_on_sheet(ws, unmatched_unfulfilled, wafer_col=1, spec_col=2, name_col=3)
                             st.success("✅ 已合并未交订单数据")
     
                             # 追加预测信息
                             df_forecast = additional_sheets["赛卓-预测"]
                             df_forecast.columns = df_forecast.iloc[0]   # 第二行设为 header
                             df_forecast = df_forecast[1:].reset_index(drop=True)  # 删除第一行并重建索引
-                            summary_preview = append_forecast_to_summary(summary_preview, df_forecast)
+                            summary_preview, unmatched_forecast = append_forecast_to_summary(summary_preview, df_forecast)
+                            ws = writer.sheets["赛卓-预测"]
+                            mark_unmatched_keys_on_sheet(ws, unmatched_forecast, wafer_col=1, spec_col=2, name_col=3)
                             st.success("✅ 已合并预测数据")
     
                             # 追加成品库存信息
                             df_finished = apply_mapping_and_merge(df_finished, mapping_df, FIELD_MAPPINGS[sheet_name])
                             st.write(df_finished)
-                            summary_preview = merge_finished_inventory(summary_preview, df_finished)
+                            summary_preview, unmatched_finished = merge_finished_inventory(summary_preview, df_finished)
+                            ws = writer.sheets["赛卓-成品库存"]
+                            mark_unmatched_keys_on_sheet(ws, unmatched_finished, wafer_col=1, spec_col=2, name_col=3)
                             st.success("✅ 已合并成品库存")
     
                             # 追加成品在制信息
                             product_in_progress = apply_mapping_and_merge(product_in_progress, mapping_df, FIELD_MAPPINGS[sheet_name])
                             st.write(product_in_progress)
-                            summary_preview = append_product_in_progress(summary_preview, product_in_progress, mapping_df)
+                            summary_preview, unmatched_in_progress = append_product_in_progress(summary_preview, product_in_progress_df, mapping_df)
+                            ws = writer.sheets["赛卓-成品在制"]
+                            mark_unmatched_keys_on_sheet(ws, unmatched_in_progress, wafer_col=1, spec_col=2, name_col=3)
                             st.success("✅ 已合并成品在制")
-
-    
-    
-                                
     
     
                                 
@@ -179,6 +184,7 @@ class PivotProcessor:
                                     "成品库存": (finished_cols[0], finished_cols[-1])
                                  }
                             )
+
 
 
                         except Exception as e:
