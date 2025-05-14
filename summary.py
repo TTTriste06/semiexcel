@@ -118,3 +118,55 @@ def merge_finished_inventory(summary_df, finished_df):
     merged = summary_df.merge(finished_df[key_cols + value_cols], on=key_cols, how="left")
 
     return merged
+
+def append_product_in_progress(summary_df, product_in_progress_df, mapping_df):
+    """
+    将成品在制与半成品在制信息合并到 summary_df 中。
+    
+    参数：
+    - summary_df: 汇总表（含“晶圆品名”，“规格”，“品名”）
+    - product_in_progress_df: 透视后的“赛卓-成品在制”数据
+    - mapping_df: 新旧料号映射表，包含“半成品”列
+
+    返回：
+    - summary_df: 添加了“成品在制”与“半成品在制”的 DataFrame
+    """
+    numeric_cols = product_in_progress_df.select_dtypes(include='number').columns.tolist()
+    summary_df = summary_df.copy()
+    summary_df["成品在制"] = 0
+    summary_df["半成品在制"] = 0
+
+    # 填充成品在制
+    for idx, row in product_in_progress_df.iterrows():
+        mask = (
+            (summary_df["晶圆品名"] == row["晶圆型号"]) &
+            (summary_df["规格"] == row["产品规格"]) &
+            (summary_df["品名"] == row["产品品名"])
+        )
+        if mask.any():
+            summary_df.loc[mask, "成品在制"] = row[numeric_cols].sum()
+
+    # 半成品逻辑
+    semi_rows = mapping_df[mapping_df["半成品"].notna() & (mapping_df["半成品"] != "")]
+    semi_info_table = semi_rows[["新规格", "新品名", "新晶圆品名", "半成品"]].copy()
+    semi_info_table["未交数据和"] = 0
+
+    for idx, row in semi_info_table.iterrows():
+        matched = product_in_progress_df[
+            (product_in_progress_df["产品规格"] == row["新规格"]) &
+            (product_in_progress_df["晶圆型号"] == row["新晶圆品名"]) &
+            (product_in_progress_df["产品品名"] == row["半成品"])
+        ]
+        semi_info_table.at[idx, "未交数据和"] = matched[numeric_cols].sum().sum() if not matched.empty else 0
+
+    for idx, row in semi_info_table.iterrows():
+        mask = (
+            (summary_df["晶圆品名"] == row["新晶圆品名"]) &
+            (summary_df["规格"] == row["新规格"]) &
+            (summary_df["品名"] == row["新品名"])
+        )
+        if mask.any():
+            summary_df.loc[mask, "半成品在制"] = row["未交数据和"]
+
+    return summary_df
+
