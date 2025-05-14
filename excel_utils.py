@@ -1,4 +1,5 @@
 from openpyxl.utils import get_column_letter
+from openpyxl.styles import Alignment, Font
 
 def adjust_column_width(writer, sheet_name, df):
     """
@@ -16,3 +17,39 @@ def adjust_column_width(writer, sheet_name, df):
         header_len = len(str(col))
         column_width = max(max_content_len, header_len) * 1.2 + 5
         worksheet.column_dimensions[get_column_letter(idx)].width = min(column_width, 50)
+
+def merge_header_for_summary(ws, df, label_ranges):
+    """
+    给指定汇总列添加顶部合并行标题（如“安全库存”“未交订单”）
+
+    参数:
+    - ws: openpyxl worksheet
+    - df: summary DataFrame
+    - label_ranges: dict，键是标题文字，值是列名范围元组，如：
+        {
+            "安全库存": (" InvWaf", " InvPart"),
+            "未交订单": ("总未交订单", "未交订单数量_2025-08")
+        }
+    """
+
+    # 插入一行作为新表头（原表头往下挪）
+    ws.insert_rows(1)
+    header_row = list(df.columns)
+
+    for label, (start_col_name, end_col_name) in label_ranges.items():
+        if start_col_name not in header_row or end_col_name not in header_row:
+            continue
+
+        start_idx = header_row.index(start_col_name) + 1  # Excel index starts from 1
+        end_idx = header_row.index(end_col_name) + 1
+
+        col_letter_start = get_column_letter(start_idx)
+        col_letter_end = get_column_letter(end_idx)
+
+        merge_range = f"{col_letter_start}1:{col_letter_end}1"
+        ws.merge_cells(merge_range)
+        cell = ws[f"{col_letter_start}1"]
+        cell.value = label
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+        cell.font = Font(bold=True)
+
