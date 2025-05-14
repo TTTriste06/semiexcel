@@ -69,7 +69,16 @@ class PivotProcessor:
                     # ✅ 如果当前是“未交订单”sheet，则拷贝前三列到新 sheet
                     if sheet_name == "赛卓-未交订单":
                         try:
+                            # 提取前三列作为汇总基础
                             summary_preview = df[["晶圆品名", "规格", "品名"]].drop_duplicates().reset_index(drop=True)
+                            
+                            # 如果有安全库存 sheet，进行合并
+                            if additional_sheets and "赛卓-安全库存" in additional_sheets:
+                                df_safety = additional_sheets["赛卓-安全库存"]
+                                summary_preview = merge_safety_inventory(summary_preview, df_safety)
+                                st.success("✅ 安全库存信息已合并至汇总 Sheet")
+
+                            # 写入“汇总” sheet
                             summary_preview.to_excel(writer, sheet_name="汇总", index=False)
                             adjust_column_width(writer, "汇总", summary_preview)
                             st.success("✅ 已写入汇总Sheet")
@@ -98,7 +107,6 @@ class PivotProcessor:
                         adjust_column_width(writer, sheet_name, df)
                     except Exception as e:
                         st.error(f"❌ 写入附加 Sheet `{sheet_name}` 失败: {e}")
-
         output_buffer.seek(0)
 
     def _process_date_column(self, df, date_col, date_format):
