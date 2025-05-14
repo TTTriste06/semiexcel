@@ -9,7 +9,7 @@ from config import CONFIG
 from excel_utils import adjust_column_width, merge_header_for_summary
 from mapping_utils import apply_mapping_and_merge
 from month_selector import process_history_columns
-from summary import merge_safety_inventory, append_unfulfilled_summary_columns
+from summary import merge_safety_inventory, append_unfulfilled_summary_columns，append_forecast_to_summary
 
 FIELD_MAPPINGS = {
     "赛卓-未交订单": {"规格": "规格", "品名": "品名", "晶圆品名": "晶圆品名"},
@@ -30,21 +30,26 @@ class PivotProcessor:
                     if not config:
                         st.warning(f"⚠️ 跳过未配置的文件：{filename}")
                         continue
+    
 
                     sheet_name = filename[:30].replace(".xlsx", "")
                     st.write(f"📄 正在处理文件: `{filename}` → Sheet: `{sheet_name}`")
+    
 
                     st.write(f"原始数据维度: {df.shape}")
                     st.dataframe(df.head(3))
+    
 
                     # 日期处理
                     if "date_format" in config:
                         date_col = config["columns"]
                         df = self._process_date_column(df, date_col, config["date_format"])
+    
 
                     # 映射替换（如果有）
                     if sheet_name in FIELD_MAPPINGS and "赛卓-新旧料号" in (additional_sheets or {}):
                         mapping_df = additional_sheets["赛卓-新旧料号"]
+    
 
                         try:
                             mapping_df.columns = [
@@ -57,8 +62,10 @@ class PivotProcessor:
                             st.error(f"❌ `{sheet_name}` 替换前列名失败：{e}")
                             st.write("列名：", mapping_df.columns.tolist())
                             continue
+    
 
                         df = apply_mapping_and_merge(df, mapping_df, FIELD_MAPPINGS[sheet_name])
+    
 
                     # 构建透视表
                     pivoted = self._create_pivot(df, config)
@@ -66,6 +73,7 @@ class PivotProcessor:
                     st.write(f"✅ Pivot 表创建成功，维度：{pivoted_display.shape}")
                     st.dataframe(pivoted_display.head(3))
 
+    
 
                     pivoted.to_excel(writer, sheet_name=sheet_name, index=False)
                     adjust_column_width(writer, sheet_name, pivoted)
@@ -75,6 +83,7 @@ class PivotProcessor:
                         try:
                             # 提取前三列作为汇总基础
                             summary_preview = df[["晶圆品名", "规格", "品名"]].drop_duplicates().reset_index(drop=True)
+                            
 
                             # 如果有安全库存 sheet，进行合并
                             df_safety = additional_sheets["赛卓-安全库存"]
@@ -92,32 +101,35 @@ class PivotProcessor:
                             # 打开 worksheet 进行格式化
                             ws = writer.sheets["汇总"]
                             header_row = list(summary_preview.columns)
+                            
 
                             # ✅ 找出所有“未交订单”相关列（顺序保留）
                             unfulfilled_cols = [col for col in header_row if (
                                 col == "总未交订单" or 
                                 col == "历史未交订单数量" or 
-                                re.match(r"未交订单数量_\\d{4}-\\d{2}", col)
                                 "未交订单数量" in col
                             )]
                             st.write(unfulfilled_cols)
 
-                            # ✅ 确定合并范围首尾列名
-                            if unfulfilled_cols:
-                                start_col = unfulfilled_cols[0]
-                                end_col = unfulfilled_cols[-1]
+                            # ✅ 找出所有“预测”相关列（顺序保留）
+                            forecast_cols = [col for col in header_row if (
+                                "预测" in col
+                            )]
+                            st.write(unfulfilled_cols)
 
-                                merge_header_for_summary(
-                                    ws,
-                                    summary_preview,
-                                    {
-                                        "安全库存": (" InvWaf", " InvPart"),
-                                        "未交订单": (start_col, end_col)
-                                    }
-                                )
+                            merge_header_for_summary(
+                                ws,
+                                summary_preview,
+                                {
+                                    "安全库存": (" InvWaf", " InvPart"),
+                                    "未交订单": (unfulfilled_cols[0], unfulfilled_cols[-1]),
+                                    "预测": (forecast_cols[0], forecast_cols[-1])
+                                }
+                            )
                         except Exception as e:
                             st.error(f"❌ 写入汇总失败: {e}")
 
+    
 
                 except Exception as e:
                     st.error(f"❌ 文件 `{filename}` 处理失败: {e}")
@@ -128,6 +140,7 @@ class PivotProcessor:
                 df_mapping.to_excel(writer, sheet_name="赛卓-新旧料号", index=False)
                 adjust_column_width(writer, "赛卓-新旧料号", df_mapping)
 
+    
 
             # 写入附加 sheet（如预测、安全库存）
             if additional_sheets:
@@ -163,6 +176,7 @@ class PivotProcessor:
         config = config.copy()
         if "date_format" in config:
             config["columns"] = f"{config['columns']}_年月"
+    
 
         pivoted = pd.pivot_table(
             df,
@@ -172,9 +186,11 @@ class PivotProcessor:
             aggfunc=config["aggfunc"],
             fill_value=0
         )
+    
 
         # 合并多级列名（如 (订单数量, 2024-05) → 订单数量_2024-05）
         pivoted.columns = [f"{col[0]}_{col[1]}" if isinstance(col, tuple) else str(col) for col in pivoted.columns]
+    
 
         # 检查并处理重复列名
         if pd.Series(pivoted.columns).duplicated().any():
@@ -182,6 +198,7 @@ class PivotProcessor:
             original_cols = pivoted.columns
             deduped_cols = ParserBase({'names': original_cols})._maybe_dedup_names(original_cols)
             pivoted.columns = deduped_cols
+    
 
         # 重置 index 以避免 to_excel 出错
         pivoted = pivoted.reset_index()
