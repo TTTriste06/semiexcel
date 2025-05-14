@@ -25,10 +25,8 @@ class PivotProcessor:
         with pd.ExcelWriter(output_buffer, engine="openpyxl") as writer:
             for filename, file_obj in uploaded_files.items():
                 try:
-                    if filename == "赛卓-预测.xlsx":
-                        df = pd.read_excel(file_io, header=1)
-                    else:
-                        df = pd.read_excel(file_obj)
+                    df = pd.read_excel(file_obj)
+                    st.write(filename)
                     config = CONFIG["pivot_config"].get(filename)
                     if not config:
                         st.warning(f"⚠️ 跳过未配置的文件：{filename}")
