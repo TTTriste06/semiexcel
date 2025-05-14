@@ -9,7 +9,7 @@ from config import CONFIG
 from excel_utils import adjust_column_width, merge_header_for_summary
 from mapping_utils import apply_mapping_and_merge
 from month_selector import process_history_columns
-from summary import merge_safety_inventory, append_unfulfilled_summary_columns，append_forecast_to_summary
+from summary import merge_safety_inventory, append_unfulfilled_summary_columns
 
 FIELD_MAPPINGS = {
     "赛卓-未交订单": {"规格": "规格", "品名": "品名", "晶圆品名": "晶圆品名"},
@@ -97,30 +97,28 @@ class PivotProcessor:
                             unfulfilled_cols = [col for col in header_row if (
                                 col == "总未交订单" or 
                                 col == "历史未交订单数量" or 
+                                re.match(r"未交订单数量_\\d{4}-\\d{2}", col)
                                 "未交订单数量" in col
                             )]
                             st.write(unfulfilled_cols)
 
-                            # ✅ 找出所有“预测”相关列（顺序保留）
-                            forecast_cols = [col for col in header_row if (
-                                "预测" in col
-                            )]
-                            st.write(unfulfilled_cols)
+                            # ✅ 确定合并范围首尾列名
+                            if unfulfilled_cols:
+                                start_col = unfulfilled_cols[0]
+                                end_col = unfulfilled_cols[-1]
 
-                            merge_header_for_summary(
-                                ws,
-                                summary_preview,
-                                {
-                                    "安全库存": (" InvWaf", " InvPart"),
-                                    "未交订单": (unfulfilled_cols[0], unfulfilled_cols[-1]),
-                                    "预测": (forecast_cols[0], forecast_cols[-1])
-                                }
-                            )
+                                merge_header_for_summary(
+                                    ws,
+                                    summary_preview,
+                                    {
+                                        "安全库存": (" InvWaf", " InvPart"),
+                                        "未交订单": (start_col, end_col)
+                                    }
+                                )
                         except Exception as e:
                             st.error(f"❌ 写入汇总失败: {e}")
 
-    
-                            
+
                 except Exception as e:
                     st.error(f"❌ 文件 `{filename}` 处理失败: {e}")
 
