@@ -99,6 +99,7 @@ class PivotProcessor:
                             if "赛卓-预测" in additional_sheets:
                                 try:
                                     df_forecast = additional_sheets["赛卓-预测"]
+                                    df_forecast = pd.read_excel(forecast_file, header=1)
                                     summary_preview = append_forecast_to_summary(summary_preview, df_forecast)
                                     st.success("✅ 已合并预测数据")
                                 except Exception as e:
