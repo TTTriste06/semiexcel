@@ -213,19 +213,19 @@ class PivotProcessor:
             # 标记未匹配项
             try:
                 ws = writer.sheets["赛卓-安全库存"]
-                mark_unmatched_keys_on_sheet(ws, unmatched_safety, wafer_col=1, spec_col=2, name_col=3)
+                mark_unmatched_keys_on_sheet(ws, unmatched_safety, wafer_col=1, spec_col=3, name_col=5)
             
                 ws = writer.sheets["赛卓-未交订单"]
                 mark_unmatched_keys_on_sheet(ws, unmatched_unfulfilled, wafer_col=1, spec_col=2, name_col=3)
             
                 ws = writer.sheets["赛卓-预测"]
-                mark_unmatched_keys_on_sheet(ws, unmatched_forecast, wafer_col=1, spec_col=2, name_col=3)
+                mark_unmatched_keys_on_sheet(ws, unmatched_forecast, wafer_col=3, spec_col=1, name_col=2)
             
                 ws = writer.sheets["赛卓-成品库存"]
                 mark_unmatched_keys_on_sheet(ws, unmatched_finished, wafer_col=1, spec_col=2, name_col=3)
             
                 ws = writer.sheets["赛卓-成品在制"]
-                mark_unmatched_keys_on_sheet(ws, unmatched_in_progress, wafer_col=1, spec_col=2, name_col=3)
+                mark_unmatched_keys_on_sheet(ws, unmatched_in_progress, wafer_col=3, spec_col=4, name_col=5)
             
                 st.success("✅ 已完成未匹配项标记")
             except Exception as e:
