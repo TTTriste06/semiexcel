@@ -109,7 +109,7 @@ class PivotProcessor:
                             
                             # 构造透视配置
                             config_finished = {
-                                "index": ["晶圆品名", "规格", "品名"],
+                                "index": ["WAFER品名", "规格", "品名"],
                                 "columns": "仓库名称",
                                 "values": "数量",
                                 "aggfunc": "sum"
