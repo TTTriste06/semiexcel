@@ -135,6 +135,28 @@ class PivotProcessor:
                             adjust_column_width(writer, "汇总", summary_preview)
                             st.success("✅ 已写入汇总Sheet")
 
+                            # 标记未匹配项
+                            try:
+                                ws = writer.sheets["赛卓-安全库存"]
+                                mark_unmatched_keys_on_sheet(ws, unmatched_safety, wafer_col=1, spec_col=2, name_col=3)
+                            
+                                ws = writer.sheets["赛卓-未交订单"]
+                                mark_unmatched_keys_on_sheet(ws, unmatched_unfulfilled, wafer_col=1, spec_col=2, name_col=3)
+                            
+                                ws = writer.sheets["赛卓-预测"]
+                                mark_unmatched_keys_on_sheet(ws, unmatched_forecast, wafer_col=1, spec_col=2, name_col=3)
+                            
+                                ws = writer.sheets["赛卓-成品库存"]
+                                mark_unmatched_keys_on_sheet(ws, unmatched_finished, wafer_col=1, spec_col=2, name_col=3)
+                            
+                                ws = writer.sheets["赛卓-成品在制"]
+                                mark_unmatched_keys_on_sheet(ws, unmatched_in_progress, wafer_col=1, spec_col=2, name_col=3)
+                            
+                                st.success("✅ 已完成未匹配项标记")
+                            except Exception as e:
+                                st.error(f"❌ 标记未匹配项失败: {e}")
+
+
     
                             # 打开 worksheet 进行格式化
                             ws = writer.sheets["汇总"]
