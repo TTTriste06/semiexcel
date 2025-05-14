@@ -99,35 +99,36 @@ class PivotProcessor:
                             # 提取前三列作为汇总基础
                             summary_preview = df[["晶圆品名", "规格", "品名"]].drop_duplicates().reset_index(drop=True)
 
+                            
+                            # 追加安全库存信息
+                            df_safety = additional_sheets["赛卓-安全库存"]
                             with pd.ExcelWriter(output_buffer, engine="openpyxl") as writer:
-                                # 追加安全库存信息
-                                df_safety = additional_sheets["赛卓-安全库存"]
                                 summary_preview = merge_safety_inventory(summary_preview, df_safety, writer=writer)
-                                st.success("✅ 已合并安全库存数据")
+                            st.success("✅ 已合并安全库存数据")
         
-                                # 追加未交订单信息
-                                summary_preview = append_unfulfilled_summary_columns(summary_preview, pivoted)
-                                st.success("✅ 已合并未交订单数据")
-        
-                                # 追加预测信息
-                                df_forecast = additional_sheets["赛卓-预测"]
-                                df_forecast.columns = df_forecast.iloc[0]   # 第二行设为 header
-                                df_forecast = df_forecast[1:].reset_index(drop=True)  # 删除第一行并重建索引
-                                summary_preview = append_forecast_to_summary(summary_preview, df_forecast)
-                                st.success("✅ 已合并预测数据")
-        
-                                # 追加成品库存信息
-                                df_finished = apply_mapping_and_merge(df_finished, mapping_df, FIELD_MAPPINGS[sheet_name])
-                                st.write(df_finished)
-                                summary_preview = merge_finished_inventory(summary_preview, df_finished)
-                                st.success("✅ 已合并成品库存")
-        
-                                # 追加成品在制信息
-                                product_in_progress = apply_mapping_and_merge(product_in_progress, mapping_df, FIELD_MAPPINGS[sheet_name])
-                                st.write(product_in_progress)
-                                summary_preview = append_product_in_progress(summary_preview, product_in_progress, mapping_df)
-                                st.success("✅ 已合并成品在制")
+                            # 追加未交订单信息
+                            summary_preview = append_unfulfilled_summary_columns(summary_preview, pivoted)
+                            st.success("✅ 已合并未交订单数据")
     
+                            # 追加预测信息
+                            df_forecast = additional_sheets["赛卓-预测"]
+                            df_forecast.columns = df_forecast.iloc[0]   # 第二行设为 header
+                            df_forecast = df_forecast[1:].reset_index(drop=True)  # 删除第一行并重建索引
+                            summary_preview = append_forecast_to_summary(summary_preview, df_forecast)
+                            st.success("✅ 已合并预测数据")
+    
+                            # 追加成品库存信息
+                            df_finished = apply_mapping_and_merge(df_finished, mapping_df, FIELD_MAPPINGS[sheet_name])
+                            st.write(df_finished)
+                            summary_preview = merge_finished_inventory(summary_preview, df_finished)
+                            st.success("✅ 已合并成品库存")
+    
+                            # 追加成品在制信息
+                            product_in_progress = apply_mapping_and_merge(product_in_progress, mapping_df, FIELD_MAPPINGS[sheet_name])
+                            st.write(product_in_progress)
+                            summary_preview = append_product_in_progress(summary_preview, product_in_progress, mapping_df)
+                            st.success("✅ 已合并成品在制")
+
     
     
                                 
