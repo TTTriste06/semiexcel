@@ -67,6 +67,13 @@ class PivotProcessor:
     
                 except Exception as e:
                     st.error(f"❌ 文件 `{filename}` 处理失败: {e}")
+
+            # 写入新旧料号
+            df_mapping = additional_sheets.get("赛卓-新旧料号")
+            if df_mapping is not None:
+                df_mapping.to_excel(writer, sheet_name="赛卓-新旧料号", index=False)
+                adjust_column_width(writer, "赛卓-新旧料号", df_mapping)
+
     
             # 写入附加 sheet（如预测、安全库存）
             if additional_sheets:
