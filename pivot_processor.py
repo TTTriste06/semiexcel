@@ -135,27 +135,6 @@ class PivotProcessor:
                             adjust_column_width(writer, "汇总", summary_preview)
                             st.success("✅ 已写入汇总Sheet")
 
-                            # 标记未匹配项
-                            try:
-                                ws = writer.sheets["赛卓-安全库存"]
-                                mark_unmatched_keys_on_sheet(ws, unmatched_safety, wafer_col=1, spec_col=2, name_col=3)
-                            
-                                ws = writer.sheets["赛卓-未交订单"]
-                                mark_unmatched_keys_on_sheet(ws, unmatched_unfulfilled, wafer_col=1, spec_col=2, name_col=3)
-                            
-                                ws = writer.sheets["赛卓-预测"]
-                                mark_unmatched_keys_on_sheet(ws, unmatched_forecast, wafer_col=1, spec_col=2, name_col=3)
-                            
-                                ws = writer.sheets["赛卓-成品库存"]
-                                mark_unmatched_keys_on_sheet(ws, unmatched_finished, wafer_col=1, spec_col=2, name_col=3)
-                            
-                                ws = writer.sheets["赛卓-成品在制"]
-                                mark_unmatched_keys_on_sheet(ws, unmatched_in_progress, wafer_col=1, spec_col=2, name_col=3)
-                            
-                                st.success("✅ 已完成未匹配项标记")
-                            except Exception as e:
-                                st.error(f"❌ 标记未匹配项失败: {e}")
-
 
     
                             # 打开 worksheet 进行格式化
@@ -224,6 +203,27 @@ class PivotProcessor:
                         adjust_column_width(writer, sheet_name, df)
                     except Exception as e:
                         st.error(f"❌ 写入附加 Sheet `{sheet_name}` 失败: {e}")
+
+            # 标记未匹配项
+            try:
+                ws = writer.sheets["赛卓-安全库存"]
+                mark_unmatched_keys_on_sheet(ws, unmatched_safety, wafer_col=1, spec_col=2, name_col=3)
+            
+                ws = writer.sheets["赛卓-未交订单"]
+                mark_unmatched_keys_on_sheet(ws, unmatched_unfulfilled, wafer_col=1, spec_col=2, name_col=3)
+            
+                ws = writer.sheets["赛卓-预测"]
+                mark_unmatched_keys_on_sheet(ws, unmatched_forecast, wafer_col=1, spec_col=2, name_col=3)
+            
+                ws = writer.sheets["赛卓-成品库存"]
+                mark_unmatched_keys_on_sheet(ws, unmatched_finished, wafer_col=1, spec_col=2, name_col=3)
+            
+                ws = writer.sheets["赛卓-成品在制"]
+                mark_unmatched_keys_on_sheet(ws, unmatched_in_progress, wafer_col=1, spec_col=2, name_col=3)
+            
+                st.success("✅ 已完成未匹配项标记")
+            except Exception as e:
+                st.error(f"❌ 标记未匹配项失败: {e}")
         output_buffer.seek(0)
 
     def _process_date_column(self, df, date_col, date_format):
