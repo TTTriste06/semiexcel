@@ -9,7 +9,7 @@ from config import CONFIG
 from excel_utils import adjust_column_width, merge_header_for_summary
 from mapping_utils import apply_mapping_and_merge
 from month_selector import process_history_columns
-from summary import merge_safety_inventory, append_unfulfilled_summary_columns, append_forecast_to_summary
+from summary import merge_safety_inventory, append_unfulfilled_summary_columns, append_forecast_to_summary, merge_finished_inventory
 
 FIELD_MAPPINGS = {
     "赛卓-未交订单": {"规格": "规格", "品名": "品名", "晶圆品名": "晶圆品名"},
