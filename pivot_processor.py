@@ -103,6 +103,13 @@ class PivotProcessor:
                             st.success("✅ 已合并预测数据")
 
                             # 追加成品库存信息
+                            st.write("当前 additional_sheets keys：", list(additional_sheets.keys()))
+                            df_finished = additional_sheets.get("赛卓-成品库存")
+                            if df_finished is None:
+                                st.warning("⚠️ 没有找到成品库存数据，跳过合并")
+                            else:
+                                summary_preview = merge_finished_inventory(summary_preview, df_finished)
+
                             df_finished = additional_sheets["赛卓-成品库存"]
                             summary_preview = merge_finished_inventory(summary_preview, df_finished)
                             st.success("✅ 已合并成品库存")
