@@ -107,51 +107,11 @@ class PivotProcessor:
                             st.success("✅ 已合并预测数据")
 
                             # 追加成品库存信息
-                            # 读取原始 Excel 数据
-                            df_finished_raw = pd.read_excel(uploaded_files["赛卓-成品库存.xlsx"], sheet_name=0)
-                            df_finished_raw.columns = df_finished_raw.columns.str.strip()
-                            
-                            # 构造透视配置
-                            config_finished = {
-                                "index": ["WAFER品名", "规格", "品名"],
-                                "columns": "仓库名称",
-                                "values": "数量",
-                                "aggfunc": "sum"
-                            }
-                            
-                            # 调用已有方法透视
-                            df_finished = self._create_pivot(df_finished_raw, config_finished)
-
-                            # ✅ 添加前缀：数量_
-                            cols_to_rename = {
-                                col: f"数量_{col}"
-                                for col in df_finished.columns
-                                if col not in ["WAFER品名", "规格", "品名"]
-                            }
-                            df_finished = df_finished.rename(columns=cols_to_rename)
-                            
-                            # 合并进汇总表
                             st.write(df_finished)
                             summary_preview = merge_finished_inventory(summary_preview, df_finished)
                             st.success("✅ 已合并成品库存")
 
                             # 追加成品在制信息
-                            # 读取原始 Excel 数据
-                            product_in_progress_raw = pd.read_excel(uploaded_files["赛卓-成品在制.xlsx"], sheet_name=0)
-                            product_in_progress_raw.columns = product_in_progress_raw.columns.str.strip()
-                            
-                            # 构造透视配置
-                            config_progress = {
-                                "index": ["工作中心", "封装形式", "晶圆型号", "产品规格", "产品品名"],
-                                "columns": "预计完工日期",
-                                "values": ["未交"],
-                                "aggfunc": "sum"
-                            }
-                            
-                            # 调用已有方法透视
-                            product_in_progress = self._create_pivot(product_in_progress_raw, config_progress)
-                            
-                            # 合并进汇总表
                             st.write(product_in_progress)
                             summary_preview = append_product_in_progress(summary_preview, product_in_progress, mapping_df)
                             st.success("✅ 已合并成品在制")
