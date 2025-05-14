@@ -104,10 +104,13 @@ class PivotProcessor:
                             df_safety = additional_sheets["赛卓-安全库存"]
                             summary_preview, unmatched_safety = merge_safety_inventory(summary_preview, df_safety)
                             st.success("✅ 已合并安全库存数据")
+                            st.write(f"安全库存标红：{unmatched_safety}")
+                            
         
                             # 追加未交订单信息
                             summary_preview, unmatched_unfulfilled = append_unfulfilled_summary_columns(summary_preview, pivoted)
                             st.success("✅ 已合并未交订单数据")
+                            st.write(f"未交订单标红：{unmatched_unfulfilled}")
     
                             # 追加预测信息
                             df_forecast = additional_sheets["赛卓-预测"]
@@ -115,18 +118,21 @@ class PivotProcessor:
                             df_forecast = df_forecast[1:].reset_index(drop=True)  # 删除第一行并重建索引
                             summary_preview, unmatched_forecast = append_forecast_to_summary(summary_preview, df_forecast)
                             st.success("✅ 已合并预测数据")
+                            st.write(f"预测标红：{unmatched_forecast}")
     
                             # 追加成品库存信息
                             df_finished = apply_mapping_and_merge(df_finished, mapping_df, FIELD_MAPPINGS[sheet_name])
                             st.write(df_finished)
                             summary_preview, unmatched_finished = merge_finished_inventory(summary_preview, df_finished)
                             st.success("✅ 已合并成品库存")
+                            st.write(f"库存信息标红：{unmatched_finished}")
     
                             # 追加成品在制信息
                             product_in_progress = apply_mapping_and_merge(product_in_progress, mapping_df, FIELD_MAPPINGS[sheet_name])
                             st.write(product_in_progress)
                             summary_preview, unmatched_in_progress = append_product_in_progress(summary_preview, product_in_progress, mapping_df)
                             st.success("✅ 已合并成品在制")
+                            st.write(f"在制信息标红：{unmatched_in_progress}")
     
     
                                 
