@@ -97,8 +97,9 @@ class PivotProcessor:
                             unfulfilled_cols = [col for col in header_row if (
                                 col == "总未交订单" or 
                                 col == "历史未交订单数量" or 
-                                re.match(r"未交订单数量_\\d{4}-\\d{2}", col)
+                                "未交订单数量" in col
                             )]
+                            st.write(unfulfilled_cols)
                             
                             # ✅ 确定合并范围首尾列名
                             if unfulfilled_cols:
