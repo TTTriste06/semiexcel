@@ -95,9 +95,15 @@ class PivotProcessor:
                             st.success("✅ 已合并未交订单数据")
 
                             # 追加预测信息
-                            df_forecast = additional_sheets["赛卓-预测"]
-                            summary_preview = append_forecast_to_summary(summary_preview, df_forecast)
-                            st.success("✅ 已合并预测数据")
+                            # 合并预测数据
+                            if "赛卓-预测" in additional_sheets:
+                                try:
+                                    df_forecast = additional_sheets["赛卓-预测"]
+                                    summary_preview = append_forecast_to_summary(summary_preview, df_forecast)
+                                    st.success("✅ 已合并预测数据")
+                                except Exception as e:
+                                    st.error(f"❌ 预测信息合并失败: {e}")
+
 
                             # 写入“汇总” sheet
                             summary_preview.to_excel(writer, sheet_name="汇总", index=False)
@@ -129,8 +135,6 @@ class PivotProcessor:
                             )
                         except Exception as e:
                             st.error(f"❌ 写入汇总失败: {e}")
-
-    
 
                 except Exception as e:
                     st.error(f"❌ 文件 `{filename}` 处理失败: {e}")
