@@ -25,7 +25,10 @@ class PivotProcessor:
         with pd.ExcelWriter(output_buffer, engine="openpyxl") as writer:
             for filename, file_obj in uploaded_files.items():
                 try:
-                    df = pd.read_excel(file_obj)
+                    if name == "赛卓-预测.xlsx":
+                        df = pd.read_excel(file_io, header=1)
+                    else:
+                        df = pd.read_excel(file_obj)
                     config = CONFIG["pivot_config"].get(filename)
                     if not config:
                         st.warning(f"⚠️ 跳过未配置的文件：{filename}")
@@ -99,7 +102,6 @@ class PivotProcessor:
                             if "赛卓-预测" in additional_sheets:
                                 try:
                                     df_forecast = additional_sheets["赛卓-预测"]
-                                    df_forecast = pd.read_excel(forecast_file, header=1)
                                     summary_preview = append_forecast_to_summary(summary_preview, df_forecast)
                                     st.success("✅ 已合并预测数据")
                                 except Exception as e:
