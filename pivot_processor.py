@@ -68,12 +68,12 @@ class PivotProcessor:
                     # ✅ 如果当前是“未交订单”sheet，则拷贝前三列到新 sheet
                     if sheet_name == "赛卓-未交订单":
                         try:
-                            summary_preview = df.iloc[:, :3].drop_duplicates().reset_index(drop=True)
-                            summary_preview.to_excel(writer, sheet_name="未交订单索引", index=False)
-                            adjust_column_width(writer, "未交订单索引", summary_preview)
-                            st.success("✅ 已写入未交订单索引 Sheet")
+                            summary_preview = df[["晶圆品名", "规格", "品名"]].drop_duplicates().reset_index(drop=True)
+                            summary_preview.to_excel(writer, sheet_name="汇总", index=False)
+                            adjust_column_width(writer, "汇总", summary_preview)
+                            st.success("✅ 已写入汇总Sheet")
                         except Exception as e:
-                            st.error(f"❌ 写入未交订单索引失败: {e}")
+                            st.error(f"❌ 写入汇总失败: {e}")
 
     
                 except Exception as e:
