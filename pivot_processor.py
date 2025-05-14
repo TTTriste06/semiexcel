@@ -101,20 +101,6 @@ class PivotProcessor:
                             )]
                             st.write(unfulfilled_cols)
 
-                            # ✅ 找出所有“预测”相关列（顺序保留）
-                            forecast_cols = [col for col in header_row if "预测" in col
-                            st.write(forecast_cols)
-
-                            if unfulfilled_cols and forecast_cols:
-                                merge_header_for_summary(
-                                    ws,
-                                    summary_preview,
-                                    {
-                                        "安全库存": (" InvWaf", " InvPart"),
-                                        "未交订单": (unfulfilled_cols[0], unfulfilled_cols[-1]),
-                                        "预测": (forecast_cols[0], forecast_cols[-1])
-                                    }
-                                )
                         except Exception as e:
                             st.error(f"❌ 写入汇总失败: {e}")
                             
