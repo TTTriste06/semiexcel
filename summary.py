@@ -3,17 +3,17 @@ import re
 import streamlit as st
 from openpyxl.styles import PatternFill
 
-def merge_safety_inventory(summary_df, safety_df, writer=None):
+def merge_safety_inventory(summary_df, safety_df):
     """
-    将安全库存表中 Wafer 和 Part 信息合并到汇总数据中，并标红未匹配行（可选）。
+    将安全库存表中 Wafer 和 Part 信息合并到汇总数据中，并返回未匹配的主键列表。
 
     参数:
     - summary_df: 汇总后的未交订单表，包含 '晶圆品名'、'规格'、'品名'
     - safety_df: 安全库存表，包含 'WaferID', 'OrderInformation', 'ProductionNO.', ' InvWaf', ' InvPart'
-    - writer: openpyxl ExcelWriter（可选，如果提供，则对未匹配行进行标红）
 
     返回:
-    - 合并后的汇总 DataFrame
+    - merged: 合并后的汇总 DataFrame
+    - unmatched_keys: list of (晶圆品名, 规格, 品名) 未匹配主键
     """
 
     # 重命名列用于匹配
@@ -23,32 +23,18 @@ def merge_safety_inventory(summary_df, safety_df, writer=None):
         'ProductionNO.': '品名'
     }).copy()
 
-    # 添加标记列
-    safety_df['已匹配'] = False
-
-    # 匹配主键集合
+    # 汇总主键集合
     summary_keys = set(
         tuple(str(x).strip() for x in row)
         for row in summary_df[['晶圆品名', '规格', '品名']].dropna().values
     )
 
-    # 标记匹配情况
-    safety_df['已匹配'] = safety_df.apply(
-        lambda row: (str(row['晶圆品名']).strip(), str(row['规格']).strip(), str(row['品名']).strip()) in summary_keys,
-        axis=1
-    )
-
-    # 标红未被匹配的行（如果提供 writer）
-    if writer and "赛卓-安全库存" in writer.sheets:
-        ws = writer.sheets["赛卓-安全库存"]
-        red_fill = PatternFill(start_color="FF9999", end_color="FF9999", fill_type="solid")
-        for row in range(3, ws.max_row + 1):
-            wafer = str(ws.cell(row=row, column=1).value).strip()
-            spec = str(ws.cell(row=row, column=2).value).strip()
-            name = str(ws.cell(row=row, column=3).value).strip()
-            if (wafer, spec, name) not in summary_keys:
-                for col in range(1, ws.max_column + 1):
-                    ws.cell(row=row, column=col).fill = red_fill
+    # 找出未匹配行的主键
+    unmatched_keys = []
+    for _, row in safety_df.iterrows():
+        key = (str(row['晶圆品名']).strip(), str(row['规格']).strip(), str(row['品名']).strip())
+        if key not in summary_keys:
+            unmatched_keys.append(key)
 
     # 执行合并
     merged = summary_df.merge(
@@ -57,7 +43,7 @@ def merge_safety_inventory(summary_df, safety_df, writer=None):
         how='left'
     )
 
-    return merged
+    return merged, unmatched_keys
 
 
 def append_unfulfilled_summary_columns(summary_df, pivoted_df):
