@@ -55,21 +55,3 @@ def merge_header_for_summary(ws, df, label_ranges):
         cell.alignment = Alignment(horizontal="center", vertical="center")
         cell.font = Font(bold=True)
 
-def collect_used_keys_from_summary(summary_df):
-    return set(
-        tuple(str(x).strip() for x in row)
-        for row in summary_df[["晶圆品名", "规格", "品名"]].dropna().values
-    )
-
-def highlight_unused_rows(ws, used_key_set, wafer_col=1, spec_col=2, name_col=3):
-    red_fill = PatternFill(start_color="FF9999", end_color="FF9999", fill_type="solid")
-    for row in range(3, ws.max_row + 1):
-        wafer = str(ws.cell(row=row, column=wafer_col).value).strip()
-        spec = str(ws.cell(row=row, column=spec_col).value).strip()
-        name = str(ws.cell(row=row, column=name_col).value).strip()
-        if (wafer, spec, name) not in used_key_set:
-            for col in range(1, ws.max_column + 1):
-                ws.cell(row=row, column=col).fill = red_fill
-
-
-
