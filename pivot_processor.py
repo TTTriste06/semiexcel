@@ -6,10 +6,16 @@ from datetime import datetime, timedelta
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment, Font
 from config import CONFIG
-from excel_utils import adjust_column_width, merge_header_for_summary, collect_used_keys_from_summary, highlight_unused_rows
+from excel_utils import adjust_column_width, merge_header_for_summary
 from mapping_utils import apply_mapping_and_merge
 from month_selector import process_history_columns
-from summary import merge_safety_inventory, append_unfulfilled_summary_columns, append_forecast_to_summary, merge_finished_inventory, append_product_in_progress
+from summary import (
+    merge_safety_inventory,
+    append_unfulfilled_summary_columns,
+    append_forecast_to_summary,
+    merge_finished_inventory,
+    append_product_in_progress
+)
 
 FIELD_MAPPINGS = {
     "赛卓-未交订单": {"规格": "规格", "品名": "品名", "晶圆品名": "晶圆品名"},
@@ -213,19 +219,6 @@ class PivotProcessor:
                         adjust_column_width(writer, sheet_name, df)
                     except Exception as e:
                         st.error(f"❌ 写入附加 Sheet `{sheet_name}` 失败: {e}")
-
-            # 1. 从汇总提取用到的主键集合
-            used_keys = set([
-                (str(row[0]).strip(), str(row[1]).strip(), str(row[2]).strip())
-                for row in summary_preview[["晶圆品名", "规格", "品名"]].values
-            ])
-            
-            # 2. 遍历并处理每个 sheet
-            for sheet in ["赛卓-安全库存", "赛卓-未交订单", "赛卓-预测", "赛卓-成品在制", "赛卓-成品库存"]:
-                if sheet in writer.sheets:
-                    ws = writer.sheets[sheet]
-                    highlight_unused_rows(ws, used_keys)
-
         output_buffer.seek(0)
 
     def _process_date_column(self, df, date_col, date_format):
