@@ -96,17 +96,11 @@ class PivotProcessor:
                             st.success("✅ 已合并未交订单数据")
 
                             # 追加预测信息
-                            # 合并预测数据
-                            if "赛卓-预测" in additional_sheets:
-                                try:
-                                    df_forecast = additional_sheets["赛卓-预测"]
-                                    df_forecast.columns = df_forecast.iloc[0]   # 第二行设为 header
-                                    df_forecast = df_forecast[1:].reset_index(drop=True)  # 删除第一行并重建索引
-                                    summary_preview = append_forecast_to_summary(summary_preview, df_forecast)
-                                    st.success("✅ 已合并预测数据")
-                                except Exception as e:
-                                    st.error(f"❌ 预测信息合并失败: {e}")
-
+                            df_forecast = additional_sheets["赛卓-预测"]
+                            df_forecast.columns = df_forecast.iloc[0]   # 第二行设为 header
+                            df_forecast = df_forecast[1:].reset_index(drop=True)  # 删除第一行并重建索引
+                            summary_preview = append_forecast_to_summary(summary_preview, df_forecast)
+                            st.success("✅ 已合并预测数据")
 
                             # 写入“汇总” sheet
                             summary_preview.to_excel(writer, sheet_name="汇总", index=False)
@@ -127,13 +121,20 @@ class PivotProcessor:
                             )]
                             st.write(unfulfilled_cols)
 
+                             # ✅ 找出所有“预测”相关列（顺序保留）
+                            forecast_cols = [col for col in header_row if (
+                                "预测" in col
+                            )]
+                            st.write(forecast_cols)
+
 
                             merge_header_for_summary(
                                 ws,
                                 summary_preview,
                                 {
                                     "安全库存": (" InvWaf", " InvPart"),
-                                    "未交订单": (unfulfilled_cols[0], unfulfilled_cols[-1])
+                                    "未交订单": (unfulfilled_cols[0], unfulfilled_cols[-1]),
+                                    "预测": (forecast_cols[0], forecast_cols[-1])
                                 }
                             )
                         except Exception as e:
