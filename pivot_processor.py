@@ -103,7 +103,8 @@ class PivotProcessor:
                             st.success("✅ 已合并预测数据")
 
                             # 追加成品库存信息
-                            df_finished = additional_sheets["赛卓-成品库存"]
+                            xls = pd.ExcelFile(uploaded_files["赛卓-成品库存.xlsx"])
+                            df_finished = pd.read_excel(xls, sheet_name=0)  # 或指定 sheet_name="赛卓-成品库存"
                             st.write(df_finished)
                             summary_preview = merge_finished_inventory(summary_preview, df_finished)
                             st.success("✅ 已合并成品库存")
@@ -165,7 +166,7 @@ class PivotProcessor:
             # 写入附加 sheet（如预测、安全库存）
             if additional_sheets:
                 for sheet_name, df in additional_sheets.items():
-                    if sheet_name == "赛卓-新旧料号" or sheet_name == "赛卓-成品库存":
+                    if sheet_name == "赛卓-新旧料号":
                         continue
                     try:
                         st.write(f"📎 正在写入附加表：{sheet_name}，数据维度：{df.shape}")
