@@ -102,8 +102,7 @@ class PivotProcessor:
                             
                             # 追加安全库存信息
                             df_safety = additional_sheets["赛卓-安全库存"]
-                            with pd.ExcelWriter(output_buffer, engine="openpyxl") as writer:
-                                summary_preview = merge_safety_inventory(summary_preview, df_safety, writer=writer)
+                            summary_preview = merge_safety_inventory(summary_preview, df_safety, writer=writer)
                             st.success("✅ 已合并安全库存数据")
         
                             # 追加未交订单信息
