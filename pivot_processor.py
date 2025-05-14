@@ -74,7 +74,8 @@ class PivotProcessor:
                     if sheet_name == "赛卓-成品库存":
                         df_finished = pivoted
                     elif sheet_name == "赛卓-成品在制":
-                        product_in_progress= = pivoted
+                        product_in_progress = pivoted
+                    
                     st.write(f"✅ Pivot 表创建成功，维度：{pivoted_display.shape}")
                     st.dataframe(pivoted_display.head(3))
 
