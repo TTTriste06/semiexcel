@@ -64,29 +64,37 @@ def append_unfulfilled_summary_columns(summary_df, pivoted_df):
 
     return merged
 
+import streamlit as st
+
 def append_forecast_to_summary(summary_df, forecast_df):
     """
-    从预测表中提取与 summary_df 匹配的预测记录，仅提取一个匹配行（避免多对一），并合并每月数据。
+    从预测表中提取与 summary_df 匹配的预测记录，仅提取一行预测（每组主键）。
     """
 
-    # 第2行为header
-    forecast_df.columns = forecast_df.iloc[0]
-    forecast_df = forecast_df[1:].copy()
+    # Debug: 显示原始预测表列
+    st.write("原始预测表列名：", forecast_df.columns.tolist())
 
+    # 重命名主键列
     forecast_df = forecast_df.rename(columns={
         "产品型号": "规格",
         "ProductionNO.": "品名"
     })
 
-    # 只保留主键+预测列
+    # 主键列
     key_cols = ["晶圆品名", "规格", "品名"]
+
+    # 找出预测月份列（如“5月预测”、“6月预测”...）
     month_cols = [col for col in forecast_df.columns if isinstance(col, str) and "预测" in col]
+    st.write("识别到的预测列：", month_cols)
 
-    forecast_df = forecast_df[key_cols + month_cols]
+    if not month_cols:
+        st.warning("⚠️ 没有识别到任何预测列，请检查列名是否包含'预测'")
+        return summary_df
 
-    # 只保留每组主键的第一条记录（避免重复）
-    forecast_df = forecast_df.drop_duplicates(subset=key_cols, keep="first")
+    # 去重：每组主键保留第一行
+    forecast_df = forecast_df[key_cols + month_cols].drop_duplicates(subset=key_cols)
 
-    # 合并
+    # 合并进 summary
     merged = summary_df.merge(forecast_df, on=key_cols, how="left")
+    st.write("合并后的汇总示例：", merged.head(3))
     return merged
