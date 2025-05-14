@@ -178,7 +178,8 @@ class PivotProcessor:
                                     "安全库存": (" InvWaf", " InvPart"),
                                     "未交订单": (unfulfilled_cols[0], unfulfilled_cols[-1]),
                                     "预测": (forecast_cols[0], forecast_cols[-1]),
-                                    "成品库存": (finished_cols[0], finished_cols[-1])
+                                    "成品库存": (finished_cols[0], finished_cols[-1]),
+                                    "成品在制": ("成品在制", "半成品在制")
                                  }
                             )
 
