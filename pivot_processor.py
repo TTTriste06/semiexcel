@@ -103,7 +103,7 @@ class PivotProcessor:
                             st.success("✅ 已合并预测数据")
 
                             # 追加成品库存信息
-                            df_finished = pd.read_excel(uploaded_files["赛卓-成品库存.xlsx"])
+                            df_finished = additional_sheets["赛卓-成品库存"]
                             st.write(df_finished)
                             summary_preview = merge_finished_inventory(summary_preview, df_finished)
                             st.success("✅ 已合并成品库存")
