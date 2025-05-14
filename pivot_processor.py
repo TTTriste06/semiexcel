@@ -85,12 +85,19 @@ class PivotProcessor:
                             summary_preview = df[["晶圆品名", "规格", "品名"]].drop_duplicates().reset_index(drop=True)
                             
 
-                            # 如果有安全库存 sheet，进行合并
+                            # 追加安全库存信息
                             df_safety = additional_sheets["赛卓-安全库存"]
                             summary_preview = merge_safety_inventory(summary_preview, df_safety)
+                            st.success("✅ 已合并安全库存数据")
 
                             # 追加未交订单信息
                             summary_preview = append_unfulfilled_summary_columns(summary_preview, pivoted)
+                            st.success("✅ 已合并未交订单数据")
+
+                            # 追加预测信息
+                            df_forecast = additional_sheets["赛卓-预测"]
+                            summary_preview = append_forecast_to_summary(summary_preview, df_forecast)
+                            st.success("✅ 已合并预测数据")
 
                             # 写入“汇总” sheet
                             summary_preview.to_excel(writer, sheet_name="汇总", index=False)
