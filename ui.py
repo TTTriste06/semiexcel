@@ -18,6 +18,7 @@ def get_uploaded_files():
     manual_month = st.text_input("📅 输入历史数据截止月份（格式: YYYY-MM，可留空表示不筛选）")
     if manual_month.strip():
         CONFIG["selected_month"] = manual_month.strip()
+        st.write(CONFIG["selected_month"])
     else:
         CONFIG["selected_month"] = None
         
