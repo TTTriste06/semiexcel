@@ -100,6 +100,8 @@ class PivotProcessor:
                             if "赛卓-预测" in additional_sheets:
                                 try:
                                     df_forecast = additional_sheets["赛卓-预测"]
+                                    df_forecast.columns = df_forecast.iloc[0]   # 第二行设为 header
+                                    df_forecast = df_forecast[1:].reset_index(drop=True)  # 删除第一行并重建索引
                                     summary_preview = append_forecast_to_summary(summary_preview, df_forecast)
                                     st.success("✅ 已合并预测数据")
                                 except Exception as e:
