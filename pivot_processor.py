@@ -125,7 +125,7 @@ class PivotProcessor:
                             # 追加成品在制信息
                             product_in_progress = apply_mapping_and_merge(product_in_progress, mapping_df, FIELD_MAPPINGS[sheet_name])
                             st.write(product_in_progress)
-                            summary_preview, unmatched_in_progress = append_product_in_progress(summary_preview, product_in_progress_df, mapping_df)
+                            summary_preview, unmatched_in_progress = append_product_in_progress(summary_preview, product_in_progress, mapping_df)
                             st.success("✅ 已合并成品在制")
     
     
