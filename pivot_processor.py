@@ -124,5 +124,5 @@ class PivotProcessor:
             pivoted.columns = deduped_cols
     
         # 重置 index 以避免 to_excel 出错
-        pivoted = pivoted.reset_index(drop=True)
+        pivoted = pivoted.reset_index()
         return pivoted
