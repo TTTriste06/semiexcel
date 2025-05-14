@@ -118,8 +118,7 @@ class PivotProcessor:
                             )
                         except Exception as e:
                             st.error(f"❌ 写入汇总失败: {e}")
-
-    
+                            
                 except Exception as e:
                     st.error(f"❌ 文件 `{filename}` 处理失败: {e}")
 
