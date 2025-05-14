@@ -97,3 +97,33 @@ def append_forecast_to_summary(summary_df, forecast_df):
     merged = summary_df.merge(forecast_df, on=key_cols, how="left")
     st.write("合并后的汇总示例：", merged.head(3))
     return merged
+
+def merge_finished_inventory(summary_df, finished_df):
+    """
+    将成品库存的数量列（HOLD仓、成品仓、半成品仓）合并进汇总表
+    """
+    import streamlit as st
+
+    try:
+        # ✅ 重命名主键列（用于匹配）
+        finished_df = finished_df.rename(columns={
+            "WAFER品名": "晶圆品名",
+        })
+
+        # ✅ 匹配字段
+        key_cols = ["晶圆品名", "规格", "品名"]
+
+        # ✅ 选择需要的列
+        value_cols = [col for col in finished_df.columns if col.startswith("数量_")]
+
+        st.write("🔍 成品库存合并字段：", value_cols)
+
+        merged = summary_df.merge(
+            finished_df[key_cols + value_cols],
+            on=key_cols,
+            how="left"
+        )
+        return merged
+    except Exception as e:
+        st.error(f"❌ 成品库存合并失败: {e}")
+        return summary_df
