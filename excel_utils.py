@@ -55,31 +55,22 @@ def merge_header_for_summary(ws, df, label_ranges):
         cell.alignment = Alignment(horizontal="center", vertical="center")
         cell.font = Font(bold=True)
 
-def highlight_unused_safety_rows(ws, safety_df, unused_rows_df):
+def mark_unmatched_keys_on_sheet(ws, unmatched_keys, wafer_col=1, spec_col=2, name_col=3):
     """
-    将未被匹配的安全库存行在 Excel 中标红。
-
+    在 openpyxl 工作表中标红未匹配的行（通过主键匹配）。
+    
     参数:
-    - ws: openpyxl 的 worksheet 对象
-    - safety_df: 完整的安全库存 DataFrame（用于定位行号）
-    - unused_rows_df: 未匹配到的行，需标红
+    - ws: openpyxl worksheet 对象
+    - unmatched_keys: list of (晶圆品名, 规格, 品名) 元组
+    - wafer_col, spec_col, name_col: 表示主键列在 sheet 中的列号（从1开始）
     """
+    red_fill = PatternFill(start_color="FF9999", end_color="FF9999", fill_type="solid")
+    unmatched_set = set(tuple(str(x).strip() for x in key) for key in unmatched_keys)
 
-    # 设置红色填充
-    red_fill = PatternFill(start_color='FFFF6666', end_color='FFFF6666', fill_type='solid')
-
-    # 识别需要标红的行索引
-    key_cols = ['晶圆品名', '规格', '品名']
-    unused_set = set(
-        tuple(row) for row in unused_rows_df[key_cols].itertuples(index=False, name=None)
-    )
-
-    # 遍历 worksheet 并标红匹配行（跳过 header）
-    for row_idx in range(2, ws.max_row + 1):
-        wafer = ws.cell(row=row_idx, column=1).value
-        spec = ws.cell(row=row_idx, column=2).value
-        name = ws.cell(row=row_idx, column=3).value
-        if (wafer, spec, name) in unused_set:
-            for col_idx in range(1, ws.max_column + 1):
-                ws.cell(row=row_idx, column=col_idx).fill = red_fill
-
+    for row in range(3, ws.max_row + 1):
+        wafer = str(ws.cell(row=row, column=wafer_col).value).strip()
+        spec = str(ws.cell(row=row, column=spec_col).value).strip()
+        name = str(ws.cell(row=row, column=name_col).value).strip()
+        if (wafer, spec, name) in unmatched_set:
+            for col in range(1, ws.max_column + 1):
+                ws.cell(row=row, column=col).fill = red_fill
