@@ -122,7 +122,7 @@ class PivotProcessor:
                             cols_to_rename = {
                                 col: f"数量_{col}"
                                 for col in df_finished.columns
-                                if col not in ["晶圆品名", "规格", "品名"]
+                                if col not in ["WAFER品名", "规格", "品名"]
                             }
                             df_finished = df_finished.rename(columns=cols_to_rename)
                             
