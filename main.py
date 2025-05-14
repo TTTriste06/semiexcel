@@ -42,12 +42,6 @@ def main():
                     st.info(f"📂 使用了 GitHub 上存储的历史版本：{name}")
                 except FileNotFoundError:
                     st.warning(f"⚠️ 未提供且未在 GitHub 找到历史文件：{name}")
-
-        for filename, file in uploaded_files.items():
-            if filename == "赛卓-成品库存.xlsx":
-                df = pd.read_excel(file)
-                additional_sheets["赛卓-成品库存"] = df
-
         # 生成 Excel 汇总
         buffer = BytesIO()
         processor = PivotProcessor()
