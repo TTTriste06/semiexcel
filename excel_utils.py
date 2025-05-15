@@ -68,7 +68,7 @@ def mark_unmatched_keys_on_sheet(ws, unmatched_keys, wafer_col=1, spec_col=2, na
     red_fill = PatternFill(start_color="FF9999", end_color="FF9999", fill_type="solid")
     unmatched_set = set(tuple(str(x).strip() for x in key) for key in unmatched_keys)
 
-    for row in range(3, ws.max_row + 1):
+    for row in range(2, ws.max_row + 1):
         wafer = str(ws.cell(row=row, column=wafer_col).value).strip()
         spec = str(ws.cell(row=row, column=spec_col).value).strip()
         name = str(ws.cell(row=row, column=name_col).value).strip()
