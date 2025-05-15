@@ -3,45 +3,47 @@ import re
 import streamlit as st
 from openpyxl.styles import PatternFill
 
-def mark_unmatched_rows_in_safety(summary_df, safety_df):
+def merge_safety_inventory(summary_df, safety_df):
     """
-    标记安全库存中未匹配 summary 的行（用于标红），包含主键缺失的行。
+    将安全库存表中 Wafer 和 Part 信息合并到汇总数据中，并返回未匹配的主键列表。
 
     参数:
-    - summary_df: 包含 ['晶圆品名', '规格', '品名']
-    - safety_df: 包含 ['WaferID', 'OrderInformation', 'ProductionNO.']
+    - summary_df: 汇总后的未交订单表，包含 '晶圆品名'、'规格'、'品名'
+    - safety_df: 安全库存表，包含 'WaferID', 'OrderInformation', 'ProductionNO.', ' InvWaf', ' InvPart'
 
     返回:
-    - safety_df: 增加 '未匹配' 标记列
-    - unmatched_keys: 未匹配主键组成的元组列表（含缺失值）
+    - merged: 合并后的汇总 DataFrame
+    - unmatched_keys: list of (晶圆品名, 规格, 品名) 未匹配主键
     """
 
-    # Step 1: 重命名字段
+    # 重命名列用于匹配
     safety_df = safety_df.rename(columns={
         'WaferID': '晶圆品名',
         'OrderInformation': '规格',
         'ProductionNO.': '品名'
     }).copy()
 
-    # Step 2: 生成安全库存的主键（即使有缺失也保留）
-    def make_key(row):
-        return tuple(str(row[col]).strip() if pd.notnull(row[col]) else '' for col in ['晶圆品名', '规格', '品名'])
+    # 汇总主键集合
+    summary_keys = set(
+        tuple(str(x).strip() for x in row)
+        for row in summary_df[['晶圆品名', '规格', '品名']].dropna().values
+    )
 
-    safety_df['主键'] = safety_df.apply(make_key, axis=1)
+    # 找出未匹配行的主键
+    unmatched_keys = []
+    for _, row in safety_df.iterrows():
+        key = (str(row['晶圆品名']).strip(), str(row['规格']).strip(), str(row['品名']).strip())
+        if key not in summary_keys:
+            unmatched_keys.append(key)
 
-    # Step 3: 从 summary_df 构造使用过的主键集合（也保留空字符串）
-    summary_df = summary_df[['晶圆品名', '规格', '品名']].copy()
-    summary_df = summary_df.fillna('')  # 空缺转为空字符串
-    summary_df = summary_df.applymap(str).applymap(str.strip)
-    used_keys = set(summary_df.itertuples(index=False, name=None))
+    # 执行合并
+    merged = summary_df.merge(
+        safety_df[['晶圆品名', '规格', '品名', ' InvWaf', ' InvPart']],
+        on=['晶圆品名', '规格', '品名'],
+        how='left'
+    )
 
-    # Step 4: 标记是否未匹配
-    safety_df['未匹配'] = ~safety_df['主键'].isin(used_keys)
-
-    # Step 5: 输出未匹配主键
-    unmatched_keys = safety_df.loc[safety_df['未匹配'], '主键'].tolist()
-
-    return safety_df, unmatched_keys
+    return merged, unmatched_keys
 
 
 
