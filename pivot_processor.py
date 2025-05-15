@@ -119,7 +119,6 @@ class PivotProcessor:
                             summary_preview, unmatched_forecast = append_forecast_to_summary(summary_preview, df_forecast)
                             st.success("✅ 已合并预测数据")
                             st.write(f"预测标红：{unmatched_forecast}")
-                            df_forecast.drop(index=0, inplace=True)
     
                             # 追加成品库存信息
                             df_finished = apply_mapping_and_merge(df_finished, mapping_df, FIELD_MAPPINGS[sheet_name])
