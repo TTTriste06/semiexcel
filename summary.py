@@ -16,34 +16,37 @@ def merge_safety_inventory(summary_df, safety_df):
     - unmatched_keys: list of (晶圆品名, 规格, 品名) 未匹配主键
     """
 
-    # 重命名列用于匹配
+    # 统一主键命名
     safety_df = safety_df.rename(columns={
         'WaferID': '晶圆品名',
         'OrderInformation': '规格',
         'ProductionNO.': '品名'
     }).copy()
 
-    # 汇总主键集合
+    key_cols = ['晶圆品名', '规格', '品名']
+
+    # 构建 summary 中所有主键集合（缺失值用空字符串表示）
     summary_keys = set(
-        tuple(str(x).strip() for x in row)
-        for row in summary_df[['晶圆品名', '规格', '品名']].dropna().values
+        tuple(str(row[col]).strip() if pd.notnull(row[col]) else '' for col in key_cols)
+        for _, row in summary_df.iterrows()
     )
 
-    # 找出未匹配行的主键
+    # 查找 safety_df 中未被使用的主键
     unmatched_keys = []
     for _, row in safety_df.iterrows():
-        key = (str(row['晶圆品名']).strip(), str(row['规格']).strip(), str(row['品名']).strip())
+        key = tuple(str(row[col]).strip() if pd.notnull(row[col]) else '' for col in key_cols)
         if key not in summary_keys:
             unmatched_keys.append(key)
 
     # 执行合并
     merged = summary_df.merge(
-        safety_df[['晶圆品名', '规格', '品名', ' InvWaf', ' InvPart']],
-        on=['晶圆品名', '规格', '品名'],
+        safety_df[key_cols + [' InvWaf', ' InvPart']],
+        on=key_cols,
         how='left'
     )
 
     return merged, unmatched_keys
+
 
 
 
