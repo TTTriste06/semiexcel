@@ -38,26 +38,26 @@ class PivotProcessor:
                     if not config:
                         st.warning(f"⚠️ 跳过未配置的文件：{filename}")
                         continue
-    
+
 
                     sheet_name = filename[:30].replace(".xlsx", "")
                     st.write(f"📄 正在处理文件: `{filename}` → Sheet: `{sheet_name}`")
-    
+
 
                     st.write(f"原始数据维度: {df.shape}")
                     st.dataframe(df.head(3))
-    
+
 
                     # 日期处理
                     if "date_format" in config:
                         date_col = config["columns"]
                         df = self._process_date_column(df, date_col, config["date_format"])
-    
+
 
                     # 映射替换（如果有）
                     if sheet_name in FIELD_MAPPINGS and "赛卓-新旧料号" in (additional_sheets or {}):
                         mapping_df = additional_sheets["赛卓-新旧料号"]
-    
+
 
                         try:
                             mapping_df.columns = [
@@ -70,10 +70,10 @@ class PivotProcessor:
                             st.error(f"❌ `{sheet_name}` 替换前列名失败：{e}")
                             st.write("列名：", mapping_df.columns.tolist())
                             continue
-    
+
 
                         df = apply_mapping_and_merge(df, mapping_df, FIELD_MAPPINGS[sheet_name])
-    
+
 
                     # 构建透视表
                     pivoted = self._create_pivot(df, config)
@@ -82,16 +82,16 @@ class PivotProcessor:
                         df_finished = pivoted
                     elif sheet_name == "赛卓-成品在制":
                         product_in_progress = pivoted
-                    
+
                     st.write(f"✅ Pivot 表创建成功，维度：{pivoted_display.shape}")
                     st.dataframe(pivoted_display.head(3))
 
-    
+
 
                     pivoted.to_excel(writer, sheet_name=sheet_name, index=False)
                     adjust_column_width(writer, sheet_name, pivoted)
-                   
-                    
+
+
 
                     # ✅ 如果当前是“未交订单”sheet，则拷贝前三列到新 sheet
                     if sheet_name == "赛卓-未交订单":
@@ -99,56 +99,55 @@ class PivotProcessor:
                             # 提取前三列作为汇总基础
                             summary_preview = df[["晶圆品名", "规格", "品名"]].drop_duplicates().reset_index(drop=True)
 
-                            
+
                             # 追加安全库存信息
                             df_safety = additional_sheets["赛卓-安全库存"]
                             summary_preview, unmatched_safety = merge_safety_inventory(summary_preview, df_safety)
                             st.success("✅ 已合并安全库存数据")
                             st.write(f"安全库存标红：{unmatched_safety}")
-                            
-        
+
+
                             # 追加未交订单信息
                             summary_preview, unmatched_unfulfilled = append_unfulfilled_summary_columns(summary_preview, pivoted)
                             st.success("✅ 已合并未交订单数据")
                             st.write(f"未交订单标红：{unmatched_unfulfilled}")
-    
+
                             # 追加预测信息
-                            df_forecast = pd.read_excel(file_obj)
-                            df_forecast.columns = df_forecast.iloc[0]
-                            df_forecast = df_forecast[1:].reset_index(drop=True)
+                            df_forecast = additional_sheets["赛卓-预测"]
+                            df_forecast.columns = df_forecast.iloc[0]   # 第二行设为 header
+                            df_forecast = df_forecast[1:].reset_index(drop=True)  # 删除第一行并重建索引
                             summary_preview, unmatched_forecast = append_forecast_to_summary(summary_preview, df_forecast)
                             st.success("✅ 已合并预测数据")
                             st.write(f"预测标红：{unmatched_forecast}")
-    
+
                             # 追加成品库存信息
                             df_finished = apply_mapping_and_merge(df_finished, mapping_df, FIELD_MAPPINGS[sheet_name])
                             st.write(df_finished)
                             summary_preview, unmatched_finished = merge_finished_inventory(summary_preview, df_finished)
                             st.success("✅ 已合并成品库存")
                             st.write(f"库存信息标红：{unmatched_finished}")
-    
+
                             # 追加成品在制信息
                             product_in_progress = apply_mapping_and_merge(product_in_progress, mapping_df, FIELD_MAPPINGS[sheet_name])
                             st.write(product_in_progress)
                             summary_preview, unmatched_in_progress = append_product_in_progress(summary_preview, product_in_progress, mapping_df)
                             st.success("✅ 已合并成品在制")
                             st.write(f"在制信息标红：{unmatched_in_progress}")
-    
-    
-                                
+
+
+
                             # 写入“汇总” sheet
                             summary_preview.to_excel(writer, sheet_name="汇总", index=False)
                             adjust_column_width(writer, "汇总", summary_preview)
                             st.success("✅ 已写入汇总Sheet")
 
 
-    
+
                             # 打开 worksheet 进行格式化
                             ws = writer.sheets["汇总"]
                             header_row = list(summary_preview.columns)
 
-                                
-    
+
                             # ✅ 找出所有“未交订单”相关列（顺序保留）
                             unfulfilled_cols = [col for col in header_row if (
                                 col == "总未交订单" or 
@@ -156,13 +155,13 @@ class PivotProcessor:
                                 "未交订单数量" in col
                               )]
                             st.write(unfulfilled_cols)
-    
+
                             # ✅ 找出所有“预测”相关列（顺序保留）
                             forecast_cols = [col for col in header_row if (
                                 "预测" in col
                             )]
                             st.write(forecast_cols)
-    
+
                             # ✅ 找出所有“成品库存”相关列（顺序保留）
                             finished_cols = [col for col in header_row if (
                                 col == "数量_HOLD仓" or 
@@ -170,7 +169,7 @@ class PivotProcessor:
                                 col == "数量_半成品仓"
                             )]
                             st.write(finished_cols)
-    
+
 
                             merge_header_for_summary(
                                 ws,
@@ -179,6 +178,7 @@ class PivotProcessor:
                                     "安全库存": (" InvWaf", " InvPart"),
                                     "未交订单": (unfulfilled_cols[0], unfulfilled_cols[-1]),
                                     "预测": (forecast_cols[0], forecast_cols[-1]),
+                                    "成品库存": (finished_cols[0], finished_cols[-1])
                                     "成品库存": (finished_cols[0], finished_cols[-1]),
                                     "成品在制": ("成品在制", "半成品在制")
                                  }
@@ -197,8 +197,8 @@ class PivotProcessor:
             if df_mapping is not None:
                 df_mapping.to_excel(writer, sheet_name="赛卓-新旧料号", index=False)
                 adjust_column_width(writer, "赛卓-新旧料号", df_mapping)
-                
-    
+
+
 
             # 写入附加 sheet（如预测、安全库存）
             if additional_sheets:
@@ -209,7 +209,6 @@ class PivotProcessor:
                         st.write(f"📎 正在写入附加表：{sheet_name}，数据维度：{df.shape}")
                         df.to_excel(writer, sheet_name=sheet_name, index=False)
                         adjust_column_width(writer, sheet_name, df)
-                        
                     except Exception as e:
                         st.error(f"❌ 写入附加 Sheet `{sheet_name}` 失败: {e}")
 
@@ -217,19 +216,19 @@ class PivotProcessor:
             try:
                 ws = writer.sheets["赛卓-安全库存"]
                 mark_unmatched_keys_on_sheet(ws, unmatched_safety, wafer_col=1, spec_col=3, name_col=5)
-            
+
                 ws = writer.sheets["赛卓-未交订单"]
                 mark_unmatched_keys_on_sheet(ws, unmatched_unfulfilled, wafer_col=1, spec_col=2, name_col=3)
-            
+
                 ws = writer.sheets["赛卓-预测"]
                 mark_unmatched_keys_on_sheet(ws, unmatched_forecast, wafer_col=3, spec_col=1, name_col=2)
-            
+
                 ws = writer.sheets["赛卓-成品库存"]
                 mark_unmatched_keys_on_sheet(ws, unmatched_finished, wafer_col=1, spec_col=2, name_col=3)
-            
+
                 ws = writer.sheets["赛卓-成品在制"]
                 mark_unmatched_keys_on_sheet(ws, unmatched_in_progress, wafer_col=3, spec_col=4, name_col=5)
-            
+
                 st.success("✅ 已完成未匹配项标记")
             except Exception as e:
                 st.error(f"❌ 标记未匹配项失败: {e}")
@@ -256,7 +255,7 @@ class PivotProcessor:
         config = config.copy()
         if "date_format" in config:
             config["columns"] = f"{config['columns']}_年月"
-    
+
 
         pivoted = pd.pivot_table(
             df,
@@ -266,11 +265,11 @@ class PivotProcessor:
             aggfunc=config["aggfunc"],
             fill_value=0
         )
-    
+
 
         # 合并多级列名（如 (订单数量, 2024-05) → 订单数量_2024-05）
         pivoted.columns = [f"{col[0]}_{col[1]}" if isinstance(col, tuple) else str(col) for col in pivoted.columns]
-    
+
 
         # 检查并处理重复列名
         if pd.Series(pivoted.columns).duplicated().any():
@@ -278,7 +277,7 @@ class PivotProcessor:
             original_cols = pivoted.columns
             deduped_cols = ParserBase({'names': original_cols})._maybe_dedup_names(original_cols)
             pivoted.columns = deduped_cols
-    
+
 
         # 重置 index 以避免 to_excel 出错
         pivoted = pivoted.reset_index()
