@@ -23,7 +23,7 @@ def get_uploaded_files():
         CONFIG["selected_month"] = None
         
     uploaded_files = st.file_uploader(
-        "请上传 5 个主数据文件（未交订单、成品在制、成品库存、晶圆库存、CP在制）",
+        "📂 上传 5 个核心 Excel 文件（未交订单/成品在制/成品库存/晶圆库存/CP在制）",
         type=["xlsx"],
         accept_multiple_files=True,
         key="main_files"
@@ -38,9 +38,10 @@ def get_uploaded_files():
 
     # 额外上传的 3 个文件
     st.subheader("📁 上传额外文件（可选）")
-    forecast_file = st.file_uploader("赛卓-预测.xlsx", type="xlsx", key="forecast")
-    safety_file = st.file_uploader("赛卓-安全库存.xlsx", type="xlsx", key="safety")
-    mapping_file = st.file_uploader("赛卓-新旧料号.xlsx", type="xlsx", key="mapping")
+    forecast_file = st.file_uploader("📈 上传预测文件", type="xlsx", key="forecast")
+    safety_file = st.file_uploader("🔐 上传安全库存文件", type="xlsx", key="safety")
+    mapping_file = st.file_uploader("🔁 上传新旧料号对照表", type="xlsx", key="mapping")
+  
 
     start = st.button("🚀 生成汇总 Excel")
     return uploaded_dict, forecast_file, safety_file, mapping_file, start
