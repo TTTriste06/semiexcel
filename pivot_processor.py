@@ -206,7 +206,7 @@ class PivotProcessor:
                         continue
                     try:
                         st.write(f"📎 正在写入附加表：{sheet_name}，数据维度：{df.shape}")
-                        df.to_excel(writer, sheet_name=sheet_name, index=False)
+                        df.to_excel(writer, sheet_name=sheet_name, index=False, header = True)
                         adjust_column_width(writer, sheet_name, df)
                     except Exception as e:
                         st.error(f"❌ 写入附加 Sheet `{sheet_name}` 失败: {e}")
