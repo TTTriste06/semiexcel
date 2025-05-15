@@ -287,14 +287,7 @@ class PivotProcessor:
 
 
         # 合并多级列名（如 (订单数量, 2024-05) → 订单数量_2024-05）
-        # pivoted.columns = [f"{col[0]}_{col[1]}" if isinstance(col, tuple) else str(col) for col in pivoted.columns]
-        pivoted.columns = [
-            f"{col[0]}_{col[1].strftime('%Y-%m-%d')}" if isinstance(col, tuple) and isinstance(col[1], pd.Timestamp)
-            else str(col)
-            for col in pivoted.columns
-        ]
-
-        
+        pivoted.columns = [f"{col[0]}_{col[1]}" if isinstance(col, tuple) else str(col) for col in pivoted.columns]
 
 
         # 检查并处理重复列名
