@@ -7,7 +7,12 @@ from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment, Font
 from openpyxl import load_workbook
 from config import CONFIG
-from excel_utils import adjust_column_width, merge_header_for_summary, mark_unmatched_keys_on_sheet
+from excel_utils import (
+    adjust_column_width, 
+    merge_header_for_summary, 
+    mark_unmatched_keys_on_sheet,
+    add_filter_to_worksheet
+)
 from mapping_utils import apply_mapping_and_merge
 from month_selector import process_history_columns
 from summary import (
@@ -215,22 +220,28 @@ class PivotProcessor:
             try:
                 ws = writer.sheets["赛卓-安全库存"]
                 mark_unmatched_keys_on_sheet(ws, unmatched_safety, wafer_col=1, spec_col=3, name_col=5)
+                add_filter_to_worksheet(ws)
 
                 ws = writer.sheets["赛卓-未交订单"]
                 mark_unmatched_keys_on_sheet(ws, unmatched_unfulfilled, wafer_col=1, spec_col=2, name_col=3)
+                add_filter_to_worksheet(ws)
 
                 ws = writer.sheets["赛卓-预测"]
                 mark_unmatched_keys_on_sheet(ws, unmatched_forecast, wafer_col=3, spec_col=1, name_col=2)
                 ws.delete_rows(2)  # 删除第 1 行
+                add_filter_to_worksheet(ws)
 
                 ws = writer.sheets["赛卓-成品库存"]
                 mark_unmatched_keys_on_sheet(ws, unmatched_finished, wafer_col=1, spec_col=2, name_col=3)
+                add_filter_to_worksheet(ws)
 
                 ws = writer.sheets["赛卓-成品在制"]
                 mark_unmatched_keys_on_sheet(ws, unmatched_in_progress, wafer_col=3, spec_col=4, name_col=5)
+                add_filter_to_worksheet(ws)
 
                 ws = writer.sheets["赛卓-新旧料号"]
                 ws.delete_rows(2)  # 删除第 1 行
+                add_filter_to_worksheet(ws)
 
 
                 st.success("✅ 已完成未匹配项标记")
