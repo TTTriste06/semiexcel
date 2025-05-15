@@ -113,7 +113,9 @@ class PivotProcessor:
                             st.write(f"未交订单标红：{unmatched_unfulfilled}")
     
                             # 追加预测信息
-                            df_forecast = pd.read_excel(file_obj, header=1)
+                            df_forecast = pd.read_excel(file_obj)
+                            df_forecast.columns = df_forecast.iloc[0]
+                            df_forecast = df_forecast[1:].reset_index(drop=True)
                             summary_preview, unmatched_forecast = append_forecast_to_summary(summary_preview, df_forecast)
                             st.success("✅ 已合并预测数据")
                             st.write(f"预测标红：{unmatched_forecast}")
