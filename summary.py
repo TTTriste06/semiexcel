@@ -23,27 +23,30 @@ def merge_safety_inventory(summary_df, safety_df):
         'ProductionNO.': '品名'
     }).copy()
 
-    # 汇总主键集合
-    summary_keys = set(
+    # 保留所有安全库存主键作为候选
+    all_keys = set(
         tuple(str(x).strip() for x in row)
-        for row in summary_df[['晶圆品名', '规格', '品名']].dropna().values
+        for row in safety_df[['晶圆品名', '规格', '品名']].dropna().values
     )
 
-    # 找出未匹配行的主键
-    unmatched_keys = []
-    for _, row in safety_df.iterrows():
-        key = (str(row['晶圆品名']).strip(), str(row['规格']).strip(), str(row['品名']).strip())
-        if key not in summary_keys:
-            unmatched_keys.append(key)
-
-    # 执行合并
+    # 合并
     merged = summary_df.merge(
         safety_df[['晶圆品名', '规格', '品名', ' InvWaf', ' InvPart']],
         on=['晶圆品名', '规格', '品名'],
         how='left'
     )
 
+    # 找出合并中实际用掉的键（即 summary_df 中匹配上的）
+    used_keys = set(
+        tuple(str(x).strip() for x in row)
+        for row in merged[['晶圆品名', '规格', '品名']].dropna().values
+    )
+
+    # 未匹配的是所有键中没有被使用的部分
+    unmatched_keys = list(all_keys - used_keys)
+
     return merged, unmatched_keys
+
 
 
 def append_unfulfilled_summary_columns(summary_df, pivoted_df):
