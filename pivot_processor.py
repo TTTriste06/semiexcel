@@ -90,6 +90,9 @@ class PivotProcessor:
 
                     pivoted.to_excel(writer, sheet_name=sheet_name, index=False)
                     adjust_column_width(writer, sheet_name, pivoted)
+                    ws = writer.sheets[sheet_name]
+                    ws.auto_filter.ref = ws.dimensions
+
 
                     
 
@@ -146,6 +149,8 @@ class PivotProcessor:
                             # 打开 worksheet 进行格式化
                             ws = writer.sheets["汇总"]
                             header_row = list(summary_preview.columns)
+                            ws.auto_filter.ref = ws.dimensions
+
                                 
     
                             # ✅ 找出所有“未交订单”相关列（顺序保留）
@@ -196,6 +201,9 @@ class PivotProcessor:
             if df_mapping is not None:
                 df_mapping.to_excel(writer, sheet_name="赛卓-新旧料号", index=False)
                 adjust_column_width(writer, "赛卓-新旧料号", df_mapping)
+                ws = writer.sheets["赛卓-新旧料号"]
+                ws.auto_filter.ref = ws.dimensions
+
 
     
 
@@ -208,6 +216,8 @@ class PivotProcessor:
                         st.write(f"📎 正在写入附加表：{sheet_name}，数据维度：{df.shape}")
                         df.to_excel(writer, sheet_name=sheet_name, index=False)
                         adjust_column_width(writer, sheet_name, df)
+                        ws = writer.sheets[sheet_name]
+                        ws.auto_filter.ref = ws.dimensions
                     except Exception as e:
                         st.error(f"❌ 写入附加 Sheet `{sheet_name}` 失败: {e}")
 
