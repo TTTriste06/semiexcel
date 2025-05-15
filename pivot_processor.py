@@ -149,7 +149,6 @@ class PivotProcessor:
                             # 打开 worksheet 进行格式化
                             ws = writer.sheets["汇总"]
                             header_row = list(summary_preview.columns)
-                            ws.auto_filter.ref = ws.dimensions
 
                                 
     
