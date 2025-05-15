@@ -221,7 +221,7 @@ class PivotProcessor:
 
                 ws = writer.sheets["赛卓-预测"]
                 mark_unmatched_keys_on_sheet(ws, unmatched_forecast, wafer_col=3, spec_col=1, name_col=2)
-                ws.delete_rows(1)  # 删除第 1 行
+                ws.delete_rows(2)  # 删除第 1 行
 
                 ws = writer.sheets["赛卓-成品库存"]
                 mark_unmatched_keys_on_sheet(ws, unmatched_finished, wafer_col=1, spec_col=2, name_col=3)
@@ -230,7 +230,7 @@ class PivotProcessor:
                 mark_unmatched_keys_on_sheet(ws, unmatched_in_progress, wafer_col=3, spec_col=4, name_col=5)
 
                 ws = writer.sheets["赛卓-新旧料号"]
-                ws.delete_rows(1)  # 删除第 1 行
+                ws.delete_rows(2)  # 删除第 1 行
 
 
                 st.success("✅ 已完成未匹配项标记")
