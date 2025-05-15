@@ -272,19 +272,10 @@ class PivotProcessor:
 
     def _create_pivot(self, df, config):
         config = config.copy()
-    
-        # 如果存在日期列，先标准化为年月字符串
         if "date_format" in config:
-            date_col = config["columns"]
-            if pd.api.types.is_numeric_dtype(df[date_col]):
-                df[date_col] = df[date_col].apply(self._excel_serial_to_date)
-            else:
-                df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
-    
-            df[f"{date_col}_年月"] = df[date_col].dt.strftime("%Y-%m")
-            config["columns"] = f"{date_col}_年月"
-    
-        # 生成透视表
+            config["columns"] = f"{config['columns']}_年月"
+
+
         pivoted = pd.pivot_table(
             df,
             index=config["index"],
@@ -293,24 +284,25 @@ class PivotProcessor:
             aggfunc=config["aggfunc"],
             fill_value=0
         )
-    
-        # 扁平化列名，例如 ("订单数量", "2024-01") → "订单数量_2024-01"
-        pivoted.columns = [
-            f"{col[0]}_{col[1]}" if isinstance(col, tuple) else str(col)
-            for col in pivoted.columns
-        ]
-    
-        # 去除重复列名（如有）
+
+
+        # 合并多级列名（如 (订单数量, 2024-05) → 订单数量_2024-05）
+        pivoted.columns = [f"{col[0]}_{col[1]}" if isinstance(col, tuple) else str(col) for col in pivoted.columns]
+
+
+        # 检查并处理重复列名
         if pd.Series(pivoted.columns).duplicated().any():
             from pandas.io.parsers import ParserBase
-            deduped = ParserBase({'names': pivoted.columns})._maybe_dedup_names(pivoted.columns)
-            pivoted.columns = deduped
-    
+            original_cols = pivoted.columns
+            deduped_cols = ParserBase({'names': original_cols})._maybe_dedup_names(original_cols)
+            pivoted.columns = deduped_cols
+
+
+        # 重置 index 以避免 to_excel 出错
         pivoted = pivoted.reset_index()
-    
-        # 如果是未交订单，处理历史列合并
+
+        # ✅ 仅对未交订单表触发历史数据合并
         if CONFIG.get("selected_month") and config.get("values") and "未交订单数量" in config.get("values"):
             st.info(f"📅 合并历史数据至：{CONFIG['selected_month']}")
             pivoted = process_history_columns(pivoted, config, CONFIG["selected_month"])
-    
         return pivoted
