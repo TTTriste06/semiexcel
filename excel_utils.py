@@ -75,14 +75,3 @@ def mark_unmatched_keys_on_sheet(ws, unmatched_keys, wafer_col=1, spec_col=2, na
         if (wafer, spec, name) in unmatched_set:
             for col in range(1, ws.max_column + 1):
                 ws.cell(row=row, column=col).fill = red_fill
-
-def add_filter_to_worksheet(ws):
-    """
-    在给定 worksheet 的首行添加筛选器（自动筛选）。
-    """
-    max_col = ws.max_column
-    max_row = ws.max_row
-    col_letter = get_column_letter(max_col)
-    filter_range = f"A1:{col_letter}1"  # 第一行是 header
-    ws.auto_filter.ref = filter_range
-
