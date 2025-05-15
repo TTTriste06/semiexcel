@@ -58,20 +58,29 @@ def merge_header_for_summary(ws, df, label_ranges):
 
 def mark_unmatched_keys_on_sheet(ws, unmatched_keys, wafer_col=1, spec_col=2, name_col=3):
     """
-    在 openpyxl 工作表中标红未匹配的行（通过主键匹配）。
-    
+    在 openpyxl 工作表中标红未匹配的行（通过主键匹配），对空值/None做标准化处理。
+
     参数:
     - ws: openpyxl worksheet 对象
     - unmatched_keys: list of (晶圆品名, 规格, 品名) 元组
     - wafer_col, spec_col, name_col: 表示主键列在 sheet 中的列号（从1开始）
     """
     red_fill = PatternFill(start_color="FF9999", end_color="FF9999", fill_type="solid")
-    unmatched_set = set(tuple(str(x).strip() for x in key) for key in unmatched_keys)
 
-    for row in range(2, ws.max_row + 1):
-        wafer = str(ws.cell(row=row, column=wafer_col).value).strip()
-        spec = str(ws.cell(row=row, column=spec_col).value).strip()
-        name = str(ws.cell(row=row, column=name_col).value).strip()
+    # 标准化 unmatched_keys: 空值统一为 ''
+    def standardize(val):
+        return str(val).strip() if val is not None else ''
+
+    unmatched_set = set(
+        tuple(standardize(x) for x in key)
+        for key in unmatched_keys
+    )
+
+    for row in range(2, ws.max_row + 1):  # 从第2行开始（跳过表头）
+        wafer = standardize(ws.cell(row=row, column=wafer_col).value)
+        spec = standardize(ws.cell(row=row, column=spec_col).value)
+        name = standardize(ws.cell(row=row, column=name_col).value)
+
         if (wafer, spec, name) in unmatched_set:
             for col in range(1, ws.max_column + 1):
                 ws.cell(row=row, column=col).fill = red_fill
