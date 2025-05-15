@@ -49,6 +49,7 @@ def merge_safety_inventory(summary_df, safety_df):
     # 剩下的就是未被使用的
     unmatched_keys = list(all_keys - used_keys)
 
+    st.write("用到的：")
     st.write(used_keys)
 
     return merged, unmatched_keys
