@@ -3,6 +3,7 @@ import re
 import streamlit as st
 from openpyxl.styles import PatternFill
 
+
 def merge_safety_inventory(summary_df, safety_df):
     """
     将安全库存表中 Wafer 和 Part 信息合并到汇总数据中，并返回未匹配的主键列表。
@@ -16,7 +17,7 @@ def merge_safety_inventory(summary_df, safety_df):
     - unmatched_keys: list of (晶圆品名, 规格, 品名) 未匹配主键
     """
 
-    # 统一主键命名
+    # 重命名列统一主键
     safety_df = safety_df.rename(columns={
         'WaferID': '晶圆品名',
         'OrderInformation': '规格',
@@ -25,27 +26,31 @@ def merge_safety_inventory(summary_df, safety_df):
 
     key_cols = ['晶圆品名', '规格', '品名']
 
-    # 构建 summary 中所有主键集合（缺失值用空字符串表示）
-    summary_keys = set(
-        tuple(str(row[col]).strip() if pd.notnull(row[col]) else '' for col in key_cols)
-        for _, row in summary_df.iterrows()
+    # 所有主键（包括缺失值的行，缺失值视为空字符串）
+    safety_df['主键'] = safety_df.apply(
+        lambda row: tuple(str(row[col]).strip() if pd.notnull(row[col]) else '' for col in key_cols),
+        axis=1
     )
+    all_keys = set(safety_df['主键'])
 
-    # 查找 safety_df 中未被使用的主键
-    unmatched_keys = []
-    for _, row in safety_df.iterrows():
-        key = tuple(str(row[col]).strip() if pd.notnull(row[col]) else '' for col in key_cols)
-        if key not in summary_keys:
-            unmatched_keys.append(key)
-
-    # 执行合并
+    # 合并到 summary
     merged = summary_df.merge(
         safety_df[key_cols + [' InvWaf', ' InvPart']],
         on=key_cols,
         how='left'
     )
 
+    # 记录实际被使用到的主键（在合并结果中出现了非空 InvWaf 或 InvPart 的行）
+    used_keys = set(
+        merged[~merged[[' InvWaf', ' InvPart']].isna().all(axis=1)]
+        .apply(lambda row: tuple(str(row[col]).strip() if pd.notnull(row[col]) else '' for col in key_cols), axis=1)
+    )
+
+    # 剩下的就是未被使用的
+    unmatched_keys = list(all_keys - used_keys)
+
     return merged, unmatched_keys
+
 
 
 
