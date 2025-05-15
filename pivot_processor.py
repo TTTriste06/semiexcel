@@ -293,7 +293,7 @@ class PivotProcessor:
             else str(col).replace(' 00:00:00', '')
             for col in pivoted.columns
         ]
-
+        
 
 
         # 检查并处理重复列名
