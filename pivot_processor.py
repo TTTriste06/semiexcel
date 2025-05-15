@@ -220,31 +220,38 @@ class PivotProcessor:
             try:
                 ws = writer.sheets["赛卓-安全库存"]
                 mark_unmatched_keys_on_sheet(ws, unmatched_safety, wafer_col=1, spec_col=3, name_col=5)
-                add_filter_to_worksheet(ws)
+               
 
                 ws = writer.sheets["赛卓-未交订单"]
                 mark_unmatched_keys_on_sheet(ws, unmatched_unfulfilled, wafer_col=1, spec_col=2, name_col=3)
-                add_filter_to_worksheet(ws)
+                
 
                 ws = writer.sheets["赛卓-预测"]
                 mark_unmatched_keys_on_sheet(ws, unmatched_forecast, wafer_col=3, spec_col=1, name_col=2)
                 ws.delete_rows(2)  # 删除第 1 行
-                add_filter_to_worksheet(ws)
+                
 
                 ws = writer.sheets["赛卓-成品库存"]
                 mark_unmatched_keys_on_sheet(ws, unmatched_finished, wafer_col=1, spec_col=2, name_col=3)
-                add_filter_to_worksheet(ws)
+               
 
                 ws = writer.sheets["赛卓-成品在制"]
                 mark_unmatched_keys_on_sheet(ws, unmatched_in_progress, wafer_col=3, spec_col=4, name_col=5)
-                add_filter_to_worksheet(ws)
+                
 
                 ws = writer.sheets["赛卓-新旧料号"]
                 ws.delete_rows(2)  # 删除第 1 行
-                add_filter_to_worksheet(ws)
-
-
+                
+                
                 st.success("✅ 已完成未匹配项标记")
+
+                # ✅ 所有写入完成后再加筛选器，避免被 to_excel 覆盖
+                for sheet_name, ws in writer.sheets.items():
+                    st.write(sheet_name)
+                    # 如果第1行是你需要的 header，就添加筛选器
+                    col_letter = get_column_letter(ws.max_column)
+                    ws.auto_filter.ref = f"A1:{col_letter}1"
+
             except Exception as e:
                 st.error(f"❌ 标记未匹配项失败: {e}")
         output_buffer.seek(0)
