@@ -31,7 +31,12 @@ def get_uploaded_files():
 
     uploaded_dict = {}
     for file in uploaded_files:
-        uploaded_dict[file.name] = file
+        clean_name = file.name.encode("utf-8", "ignore").decode("utf-8")  # 保留合法部分
+        uploaded_dict[clean_name] = file
+
+    
+    #for file in uploaded_files:
+    #    uploaded_dict[file.name] = file
 
     # 输出上传文件名调试
     st.write("✅ 已上传文件名：", list(uploaded_dict.keys()))
