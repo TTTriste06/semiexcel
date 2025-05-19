@@ -14,7 +14,9 @@ def upload_to_github(file_obj, filename):
     - filename: 仓库中要保存的文件名（含扩展名）
     """
     token = st.secrets[GITHUB_TOKEN_KEY]
-    url = f"https://api.github.com/repos/{REPO_NAME}/contents/{filename}"
+    safe_filename = quote(filename)  # 编码支持中文
+
+    url = f"https://api.github.com/repos/{REPO_NAME}/contents/{safe_filename}"
     headers = {
         "Authorization": f"token {token}",
         "Accept": "application/vnd.github.v3+json"
@@ -52,7 +54,9 @@ def download_from_github(filename):
     - 返回: bytes 内容（可用于 pd.read_excel(BytesIO(...))）
     """
     token = st.secrets[GITHUB_TOKEN_KEY]
-    url = f"https://api.github.com/repos/{REPO_NAME}/contents/{filename}?ref={BRANCH}"
+    safe_filename = quote(filename)
+
+    url = f"https://api.github.com/repos/{REPO_NAME}/contents/{safe_filename}?ref={BRANCH}"
     headers = {
         "Authorization": f"token {token}",
         "Accept": "application/vnd.github.v3+json"
