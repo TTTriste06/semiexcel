@@ -5,6 +5,7 @@ import streamlit as st
 from datetime import datetime, timedelta
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment, Font
+from openpyxl.styles import PatternFill
 from openpyxl import load_workbook
 from config import CONFIG
 from excel_utils import (
@@ -144,6 +145,21 @@ class PivotProcessor:
                             summary_preview.to_excel(writer, sheet_name="汇总", index=False)
                             adjust_column_width(writer, "汇总", summary_preview)
                             st.success("✅ 已写入汇总Sheet")
+
+                            try:
+                                if "是否新旧料号合并" in summary_preview.columns:
+                                    ws = writer.sheets["汇总"]
+                                    yellow_fill = PatternFill(start_color="FFFF99", end_color="FFFF99", fill_type="solid")
+                                    merge_flag_col = summary_preview.columns.get_loc("是否新旧料号合并") + 1  # openpyxl从1开始计数
+                            
+                                    for idx, val in enumerate(summary_preview["是否新旧料号合并"], start=2):  # 从Excel第2行开始（跳过标题）
+                                        if val:
+                                            for col in range(1, ws.max_column + 1):
+                                                ws.cell(row=idx, column=col).fill = yellow_fill
+                            
+                                    st.success("✅ 已标黄新旧料号合并的行")
+                            except Exception as e:
+                                st.error(f"❌ 标黄失败：{e}")
 
 
 
