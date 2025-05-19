@@ -1,84 +1,76 @@
 import streamlit as st
-import streamlit.components.v1 as components
-import base64
-import json
-from config import CONFIG
-from memory_manager import clean_memory, display_debug_memory_stats
 from io import BytesIO
+from datetime import datetime
+import pandas as pd
+from pivot_processor import PivotProcessor
+from ui import setup_sidebar, get_uploaded_files
+from github_utils import upload_to_github, download_from_github
+from urllib.parse import quote
 
-def setup_sidebar():
-    with st.sidebar:
-        st.title("欢迎使用数据汇总工具")
-        st.markdown("---")
-        st.markdown("### 功能简介：")
-        st.markdown("- 上传 5 个主数据表（支持中文文件名）")
-        st.markdown("- 上传辅助数据（预测、安全库存、新旧料号）")
-        st.markdown("- 自动生成汇总 Excel 文件")
-        st.markdown("### 🧹 内存与资源管理")
-        if st.button("清理内存"):
-            clean_memory()
-        if st.button("查看内存使用排行"):
-            display_debug_memory_stats()
 
-def get_uploaded_files():
-    st.header("📤 Excel 数据处理与汇总")
+def main():
+    st.set_page_config(page_title="Excel数据透视汇总工具", layout="wide")
+    setup_sidebar()
 
-    manual_month = st.text_input("📅 输入历史数据截止月份（格式: YYYY-MM，可留空表示不筛选）")
-    CONFIG["selected_month"] = manual_month.strip() if manual_month.strip() else None
+    # 获取上传的内容
+    uploaded_core_files, forecast_file, safety_file, mapping_file, start = get_uploaded_files()
 
-    st.markdown("### 🔽 上传 5 个核心 Excel 文件（支持中文文件名）")
+    if start:
+        if len(uploaded_core_files) < 5:
+            st.error("❌ 请上传所有 5 个主要文件后再点击生成！")
+            return
 
-    uploaded_json = components.html("""
-    <!DOCTYPE html>
-    <html>
-    <body>
-      <input type="file" id="uploader" multiple />
-      <script>
-        const uploader = document.getElementById('uploader');
-        uploader.addEventListener('change', () => {
-          const files = uploader.files;
-          const results = [];
-          let completed = 0;
+        # 读取核心文件为 DataFrame 列表
+        uploaded_files = []
+        for name, content in uploaded_core_files:
+            try:
+                df = pd.read_excel(BytesIO(content))
+                uploaded_files.append(df)
+            except Exception as e:
+                st.error(f"❌ 无法读取 `{name}` 为 Excel：{e}")
+                return
 
-          for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            const reader = new FileReader();
-            reader.onload = () => {
-              const base64 = reader.result.split(',')[1];
-              results.push({ name: file.name, content: base64 });
-              completed++;
-              if (completed === files.length) {
-                const payload = JSON.stringify(results);
-                window.parent.postMessage({ type: "streamlit:setComponentValue", value: payload }, "*");
-              }
-            };
-            reader.readAsDataURL(file);
-          }
-        });
-      </script>
-    </body>
-    </html>
-    """, height=200, key="custom-uploader")
+        # GitHub 辅助文件名称与上传源对应
+        github_files = {
+            "赛卓-预测.xlsx": forecast_file,
+            "赛卓-安全库存.xlsx": safety_file,
+            "赛卓-新旧料号.xlsx": mapping_file
+        }
 
-    core_files = []
-    if isinstance(uploaded_json, str):
-        try:
-            file_objs = json.loads(uploaded_json)
-            core_files = [(f["name"], base64.b64decode(f["content"])) for f in file_objs]
-            st.success(f"✅ 成功上传 {len(core_files)} 个核心文件")
-        except Exception as e:
-            st.error(f"❌ 上传失败：{e}")
-    else:
-        st.info("📥 请选择多个 Excel 文件进行上传...")
+        additional_sheets = {}
 
-    for i, (fname, _) in enumerate(core_files):
-        st.write(f"📄 文件 {i+1}: `{fname}`")
+        for name, file in github_files.items():
+            if file:  # 如果上传了新文件
+                file_bytes = file.read()
+                file_io = BytesIO(file_bytes)
+                safe_name = quote(name)
+                upload_to_github(BytesIO(file_bytes), safe_name)
+                df = pd.read_excel(file_io)
+                additional_sheets[name.replace(".xlsx", "")] = df
+            else:
+                try:
+                    safe_name = quote(name)
+                    content = download_from_github(safe_name)
+                    df = pd.read_excel(BytesIO(content))
+                    additional_sheets[name.replace(".xlsx", "")] = df
+                    st.info(f"📂 使用了 GitHub 上存储的历史版本：{name}")
+                except FileNotFoundError:
+                    st.warning(f"⚠️ 未提供且未在 GitHub 找到历史文件：{name}")
 
-    st.markdown("### 🔁 上传辅助数据文件（预测、安全库存、新旧料号）")
-    forecast_file = st.file_uploader("📈 上传预测文件", type=["xlsx"])
-    safety_file = st.file_uploader("🛡️ 上传安全库存文件", type=["xlsx"])
-    mapping_file = st.file_uploader("🔁 上传新旧料号文件", type=["xlsx"])
+        # 生成汇总文件
+        buffer = BytesIO()
+        processor = PivotProcessor()
+        processor.process(uploaded_files, buffer, additional_sheets)
 
-    start = st.button("🚀 点击生成汇总 Excel 文件")
+        file_name = f"运营数据订单-在制-库存汇总报告_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        st.success("✅ 汇总完成！你可以下载结果文件：")
+        st.download_button(
+            label="📥 下载 Excel 汇总报告",
+            data=buffer.getvalue(),
+            file_name=file_name,
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
 
-    return core_files, forecast_file, safety_file, mapping_file, start
+
+if __name__ == "__main__":
+    main()
