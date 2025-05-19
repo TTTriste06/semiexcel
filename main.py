@@ -5,6 +5,7 @@ import pandas as pd
 from pivot_processor import PivotProcessor
 from ui import setup_sidebar, get_uploaded_files
 from github_utils import upload_to_github, download_from_github
+from memory_manager import clean_memory, display_debug_memory_stats
 
 def main():
     st.set_page_config(page_title="Excel数据透视汇总工具", layout="wide")
@@ -56,6 +57,17 @@ def main():
             file_name=file_name,
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
+
+        # 示例：用户侧手动清理内存（放在 sidebar）
+        with st.sidebar:
+            st.markdown("### 🧹 内存与资源管理")
+            if st.button("清理内存"):
+                clean_memory()
+        
+            if st.button("查看内存使用排行"):
+                display_debug_memory_stats()
+        
+
 
 
 if __name__ == "__main__":
