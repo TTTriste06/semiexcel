@@ -69,7 +69,7 @@ def get_uploaded_files():
     """, height=150, key="core-uploader")
 
 
-    uploaded = st._legacy_get_component_value("core-uploader")
+    uploaded = uploaded_file_data  
     if uploaded:
         try:
             decoded_files = []
