@@ -1,5 +1,4 @@
 import streamlit as st
-import pandas as pd
 import streamlit.components.v1 as components
 import base64
 import json
@@ -15,7 +14,6 @@ def setup_sidebar():
         st.markdown("- 上传 5 个主数据表（支持中文文件名）")
         st.markdown("- 上传辅助数据（预测、安全库存、新旧料号）")
         st.markdown("- 自动生成汇总 Excel 文件")
-
         st.markdown("### 🧹 内存与资源管理")
         if st.button("清理内存"):
             clean_memory()
@@ -23,7 +21,7 @@ def setup_sidebar():
             display_debug_memory_stats()
 
 def get_uploaded_files():
-    st.header("📄 Excel 数据处理与汇总")
+    st.header("📤 Excel 数据处理与汇总")
 
     manual_month = st.text_input("📅 输入历史数据截止月份（格式: YYYY-MM，可留空表示不筛选）")
     CONFIG["selected_month"] = manual_month.strip() if manual_month.strip() else None
@@ -34,13 +32,9 @@ def get_uploaded_files():
     <!DOCTYPE html>
     <html>
     <body>
-      <input type=\"file\" id=\"uploader\" multiple />
-      <p id=\"status\"></p>
+      <input type="file" id="uploader" multiple />
       <script>
-        window.Streamlit = window.parent.Streamlit;
         const uploader = document.getElementById('uploader');
-        const status = document.getElementById('status');
-
         uploader.addEventListener('change', () => {
           const files = uploader.files;
           const results = [];
@@ -55,7 +49,7 @@ def get_uploaded_files():
               completed++;
               if (completed === files.length) {
                 const payload = JSON.stringify(results);
-                Streamlit.setComponentValue(payload);
+                window.parent.postMessage({ type: "streamlit:setComponentValue", value: payload }, "*");
               }
             };
             reader.readAsDataURL(file);
@@ -64,7 +58,7 @@ def get_uploaded_files():
       </script>
     </body>
     </html>
-    """, height=220, key="custom-uploader")
+    """, height=200, key="custom-uploader")
 
     core_files = []
     if isinstance(uploaded_json, str):
@@ -75,7 +69,7 @@ def get_uploaded_files():
         except Exception as e:
             st.error(f"❌ 上传失败：{e}")
     else:
-        st.info("📅 请上传 Excel 文件...")
+        st.info("📥 请选择多个 Excel 文件进行上传...")
 
     for i, (fname, _) in enumerate(core_files):
         st.write(f"📄 文件 {i+1}: `{fname}`")
@@ -83,7 +77,7 @@ def get_uploaded_files():
     st.markdown("### 🔁 上传辅助数据文件（预测、安全库存、新旧料号）")
     forecast_file = st.file_uploader("📈 上传预测文件", type=["xlsx"])
     safety_file = st.file_uploader("🛡️ 上传安全库存文件", type=["xlsx"])
-    mapping_file = st.file_uploader("🔀 上传新旧料号文件", type=["xlsx"])
+    mapping_file = st.file_uploader("🔁 上传新旧料号文件", type=["xlsx"])
 
     start = st.button("🚀 点击生成汇总 Excel 文件")
 
