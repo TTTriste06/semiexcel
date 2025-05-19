@@ -1,5 +1,3 @@
-### ✅ ui.py — 支持中文文件名上传（适配 Streamlit Cloud）
-
 import streamlit as st
 import pandas as pd
 import streamlit.components.v1 as components
