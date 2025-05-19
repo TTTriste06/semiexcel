@@ -5,7 +5,6 @@ import streamlit as st
 from datetime import datetime, timedelta
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment, Font
-from openpyxl.styles import PatternFill
 from openpyxl import load_workbook
 from config import CONFIG
 from excel_utils import (
@@ -77,11 +76,7 @@ class PivotProcessor:
                             continue
 
 
-                        if sheet_name == "赛卓-未交订单":
-                            summary_preview, merged_key_list = apply_mapping_and_merge(df, mapping_df, FIELD_MAPPINGS[sheet_name], return_merge_keys=True)
-                        else:
-                            df = apply_mapping_and_merge(df, mapping_df, FIELD_MAPPINGS[sheet_name])
-                        df, merged_key_list = apply_mapping_and_merge(df, mapping_df, FIELD_MAPPINGS[sheet_name])
+                        df = apply_mapping_and_merge(df, mapping_df, FIELD_MAPPINGS[sheet_name])
 
 
                     # 构建透视表
@@ -128,7 +123,6 @@ class PivotProcessor:
                             summary_preview, unmatched_forecast = append_forecast_to_summary(summary_preview, df_forecast)
                             st.success("✅ 已合并预测数据")
                             st.write(f"预测标红：{unmatched_forecast}")
-                            st.write(type(unmatched_forecast))
 
                             # 追加成品库存信息
                             df_finished = apply_mapping_and_merge(df_finished, mapping_df, FIELD_MAPPINGS[sheet_name])
@@ -150,8 +144,6 @@ class PivotProcessor:
                             summary_preview.to_excel(writer, sheet_name="汇总", index=False)
                             adjust_column_width(writer, "汇总", summary_preview)
                             st.success("✅ 已写入汇总Sheet")
-
-                            
 
 
 
