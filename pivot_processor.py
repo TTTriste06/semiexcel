@@ -77,6 +77,10 @@ class PivotProcessor:
                             continue
 
 
+                        if sheet_name == "赛卓-未交订单":
+                            summary_preview, merged_key_list = apply_mapping_and_merge(df, mapping_df, FIELD_MAPPINGS[sheet_name], return_merge_keys=True)
+                        else:
+                            df = apply_mapping_and_merge(df, mapping_df, FIELD_MAPPINGS[sheet_name])
                         df, merged_key_list = apply_mapping_and_merge(df, mapping_df, FIELD_MAPPINGS[sheet_name])
 
 
