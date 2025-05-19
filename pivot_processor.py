@@ -155,6 +155,7 @@ class PivotProcessor:
                             
                                 for idx, row in summary_preview.iterrows():
                                     key = (row["规格"], row["品名"], row["晶圆品名"])
+                                    st.write(merged_key_list)
                                     if key in merged_key_list:
                                         excel_row = idx + 2  # DataFrame index 从0开始，Excel从第2行开始
                                         for col in range(1, ws.max_column + 1):
