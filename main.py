@@ -57,6 +57,16 @@ def main():
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
+    if "赛卓-新旧料号" in additional_sheets:
+        distinct_output = export_distinct_new_products(additional_sheets["赛卓-新旧料号"])
+        st.download_button(
+            label="📥 下载替换后的所有不同产品列表",
+            data=distinct_output.getvalue(),
+            file_name="替换后产品信息列表.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+
 if __name__ == "__main__":
     main()
 
