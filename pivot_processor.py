@@ -77,7 +77,7 @@ class PivotProcessor:
                             continue
 
 
-                        df = apply_mapping_and_merge(df, mapping_df, FIELD_MAPPINGS[sheet_name])
+                        df, merged_key_list = apply_mapping_and_merge(df, mapping_df, FIELD_MAPPINGS[sheet_name])
 
 
                     # 构建透视表
@@ -146,20 +146,23 @@ class PivotProcessor:
                             adjust_column_width(writer, "汇总", summary_preview)
                             st.success("✅ 已写入汇总Sheet")
 
+                            # ✅ 标黄：新旧料号合并行
                             try:
-                                if "是否新旧料号合并" in summary_preview.columns:
-                                    ws = writer.sheets["汇总"]
-                                    yellow_fill = PatternFill(start_color="FFFF99", end_color="FFFF99", fill_type="solid")
-                                    merge_flag_col = summary_preview.columns.get_loc("是否新旧料号合并") + 1  # openpyxl从1开始计数
+                                ws = writer.sheets["汇总"]
+                                from openpyxl.styles import PatternFill
+                                yellow_fill = PatternFill(start_color="FFFF99", end_color="FFFF99", fill_type="solid")
                             
-                                    for idx, val in enumerate(summary_preview["是否新旧料号合并"], start=2):  # 从Excel第2行开始（跳过标题）
-                                        if val:
-                                            for col in range(1, ws.max_column + 1):
-                                                ws.cell(row=idx, column=col).fill = yellow_fill
+                                for idx, row in summary_preview.iterrows():
+                                    key = (row["规格"], row["品名"], row["晶圆品名"])
+                                    if key in merged_key_list:
+                                        excel_row = idx + 2  # DataFrame index 从0开始，Excel从第2行开始
+                                        for col in range(1, ws.max_column + 1):
+                                            ws.cell(row=excel_row, column=col).fill = yellow_fill
                             
-                                    st.success("✅ 已标黄新旧料号合并的行")
+                                st.success("✅ 已标黄由新旧料号合并产生的行")
                             except Exception as e:
-                                st.error(f"❌ 标黄失败：{e}")
+                                st.error(f"❌ 标黄失败: {e}")
+
 
 
 
