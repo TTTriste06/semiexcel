@@ -151,24 +151,7 @@ class PivotProcessor:
                             adjust_column_width(writer, "汇总", summary_preview)
                             st.success("✅ 已写入汇总Sheet")
 
-                            # ✅ 标黄：新旧料号合并行
-                            try:
-                                ws = writer.sheets["汇总"]
-                                from openpyxl.styles import PatternFill
-                                yellow_fill = PatternFill(start_color="FFFF99", end_color="FFFF99", fill_type="solid")
                             
-                                for idx, row in summary_preview.iterrows():
-                                    key = (row["规格"], row["品名"], row["晶圆品名"])
-                                    st.write(merged_key_list)
-                                    if key in merged_key_list:
-                                        excel_row = idx + 2  # DataFrame index 从0开始，Excel从第2行开始
-                                        for col in range(1, ws.max_column + 1):
-                                            ws.cell(row=excel_row, column=col).fill = yellow_fill
-                            
-                                st.success("✅ 已标黄由新旧料号合并产生的行")
-                            except Exception as e:
-                                st.error(f"❌ 标黄失败: {e}")
-
 
 
 
