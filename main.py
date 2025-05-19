@@ -5,6 +5,7 @@ import pandas as pd
 from pivot_processor import PivotProcessor
 from ui import setup_sidebar, get_uploaded_files
 from github_utils import upload_to_github, download_from_github
+from all_product import export_distinct_new_products
 
 def main():
     st.set_page_config(page_title="Excel数据透视汇总工具", layout="wide")
