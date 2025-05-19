@@ -46,16 +46,16 @@ def apply_mapping_and_merge(df, mapping_df, field_map, verbose=True):
                 pass
 
         # 创建一个布尔掩码，表示三列新值都不为 None 且非空字符串
-        mask = (
+        mask_None = (
             df_merged["新规格"].notna() & (df_merged["新规格"].astype(str).str.strip() != "") &
             df_merged["新品名"].notna() & (df_merged["新品名"].astype(str).str.strip() != "") &
             df_merged["新晶圆品名"].notna() & (df_merged["新晶圆品名"].astype(str).str.strip() != "")
         )
         
         # 对满足条件的行进行整体替换
-        df_merged.loc[mask, "规格"] = df_merged.loc[mask, "新规格"]
-        df_merged.loc[mask, "品名"] = df_merged.loc[mask, "新品名"]
-        df_merged.loc[mask, "晶圆品名"] = df_merged.loc[mask, "新晶圆品名"]
+        df_merged.loc[mask, "规格"] = df_merged.loc[mask_None, "新规格"]
+        df_merged.loc[mask, "品名"] = df_merged.loc[mask_None, "新品名"]
+        df_merged.loc[mask, "晶圆品名"] = df_merged.loc[mask_None, "新晶圆品名"]
 
         # 替换三列值
         # df_merged[spec_col] = df_merged["新规格"].combine_first(df_merged[spec_col])
