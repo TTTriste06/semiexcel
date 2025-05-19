@@ -64,7 +64,7 @@ def apply_mapping_and_merge(df, mapping_df, field_map, verbose=True):
         group_counts = df_cleaned.groupby(group_cols).size().reset_index(name="合并前行数")
 
         # 标记合并行（三元组）= 聚合前重复行数 > 1
-        merged_key_list = group_counts[group_counts["合并前行数"] > 1][group_cols].values.tolist()
+        merged_key_list = list(map(list, group_counts[group_counts["合并前行数"] > 1][group_cols].values))
 
         # 聚合数值列
         numeric_cols = df_cleaned.select_dtypes(include="number").columns.tolist()
