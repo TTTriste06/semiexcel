@@ -35,16 +35,19 @@ def get_uploaded_files():
 
     # 自定义上传组件（支持中文）
     components.html("""
+        <script>
+          window.Streamlit = window.parent.Streamlit;
+        </script>
         <input type="file" id="uploader" multiple />
         <p id="status"></p>
         <script>
           const uploader = document.getElementById('uploader');
           const status = document.getElementById('status');
-
+    
           uploader.onchange = () => {
             const files = uploader.files;
             const results = [];
-
+    
             const readFile = (file, index) => {
               const reader = new FileReader();
               reader.onload = () => {
@@ -52,18 +55,19 @@ def get_uploaded_files():
                 results.push({ name: file.name, content: base64 });
                 if (results.length === files.length) {
                   const payload = JSON.stringify(results);
-                  window.parent.postMessage({ type: 'streamlit:setComponentValue', value: payload }, '*');
+                  Streamlit.setComponentValue(payload);
                 }
               };
               reader.readAsDataURL(file);
             };
-
+    
             for (let i = 0; i < files.length; i++) {
               readFile(files[i], i);
             }
           };
         </script>
-    """, height=100, key="core-uploader")
+    """, height=150, key="core-uploader")
+
 
     uploaded = st._legacy_get_component_value("core-uploader")
     if uploaded:
