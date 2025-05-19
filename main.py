@@ -7,10 +7,12 @@ from ui import setup_sidebar, get_uploaded_files
 from github_utils import upload_to_github, download_from_github
 from urllib.parse import quote
 
+
 def main():
     st.set_page_config(page_title="Excel数据透视汇总工具", layout="wide")
     setup_sidebar()
 
+    # 获取上传的内容
     uploaded_core_files, forecast_file, safety_file, mapping_file, start = get_uploaded_files()
 
     if start:
@@ -18,7 +20,17 @@ def main():
             st.error("❌ 请上传所有 5 个主要文件后再点击生成！")
             return
 
-        # GitHub 辅助文件名称
+        # 读取核心文件为 DataFrame 列表
+        uploaded_files = []
+        for name, content in uploaded_core_files:
+            try:
+                df = pd.read_excel(BytesIO(content))
+                uploaded_files.append(df)
+            except Exception as e:
+                st.error(f"❌ 无法读取 `{name}` 为 Excel：{e}")
+                return
+
+        # GitHub 辅助文件名称与上传源对应
         github_files = {
             "赛卓-预测.xlsx": forecast_file,
             "赛卓-安全库存.xlsx": safety_file,
@@ -26,8 +38,9 @@ def main():
         }
 
         additional_sheets = {}
+
         for name, file in github_files.items():
-            if file:
+            if file:  # 如果上传了新文件
                 file_bytes = file.read()
                 file_io = BytesIO(file_bytes)
                 safe_name = quote(name)
@@ -44,17 +57,7 @@ def main():
                 except FileNotFoundError:
                     st.warning(f"⚠️ 未提供且未在 GitHub 找到历史文件：{name}")
 
-        # 将 core 文件转为 DataFrame 列表
-        uploaded_files = []
-        for name, content in uploaded_core_files:
-            try:
-                df = pd.read_excel(BytesIO(content))
-                uploaded_files.append(df)
-            except Exception as e:
-                st.error(f"❌ 无法读取 `{name}` 为 Excel：{e}")
-                return
-
-        # 生成 Excel 汇总
+        # 生成汇总文件
         buffer = BytesIO()
         processor = PivotProcessor()
         processor.process(uploaded_files, buffer, additional_sheets)
@@ -67,6 +70,7 @@ def main():
             file_name=file_name,
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
+
 
 if __name__ == "__main__":
     main()
