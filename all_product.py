@@ -1,3 +1,6 @@
+import pandas as pd
+from io import BytesIO
+
 def export_distinct_new_products(mapping_df: pd.DataFrame, output_io: BytesIO = None) -> BytesIO:
     """
     从 mapping_df 中提取所有不同的 新规格、新品名、新晶圆品名，并导出为 Excel 文件。
