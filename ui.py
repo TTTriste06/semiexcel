@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from config import CONFIG
+from memory_manager import clean_memory, display_debug_memory_stats
 
 def setup_sidebar():
     with st.sidebar:
@@ -10,6 +11,16 @@ def setup_sidebar():
         st.markdown("- 上传 5 个主数据表")
         st.markdown("- 上传辅助数据（预测、安全库存、新旧料号）")
         st.markdown("- 自动生成汇总 Excel 文件")
+
+    # 示例：用户侧手动清理内存（放在 sidebar）
+    with st.sidebar:
+        st.markdown("### 🧹 内存与资源管理")
+        if st.button("清理内存"):
+            clean_memory()
+    
+        if st.button("查看内存使用排行"):
+            display_debug_memory_stats()
+
 
 def get_uploaded_files():
     st.header("📤 Excel 数据处理与汇总")
