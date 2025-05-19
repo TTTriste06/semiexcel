@@ -1,11 +1,14 @@
 import base64
 import requests
 import streamlit as st
+from urllib.parse import quote
+
 
 # GitHub 配置
 GITHUB_TOKEN_KEY = "GITHUB_TOKEN"  # secrets.toml 中的密钥名
 REPO_NAME = "TTTriste06/semiment"
 BRANCH = "main"
+
 
 def upload_to_github(file_obj, filename):
     """
