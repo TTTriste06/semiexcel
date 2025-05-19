@@ -28,65 +28,54 @@ def get_uploaded_files():
     manual_month = st.text_input("📅 输入历史数据截止月份（格式: YYYY-MM，可留空表示不筛选）")
     CONFIG["selected_month"] = manual_month.strip() if manual_month.strip() else None
 
-    st.markdown("### 🔽 上传 5 个核心 Excel 文件（未交订单/成品在制/成品库存/晶圆库存/CP在制）")
-    
+    st.markdown("### 🔽 上传 5 个核心 Excel 文件（支持中文文件名）")
+
     if "uploaded_core_files" not in st.session_state:
         st.session_state.uploaded_core_files = []
 
-    # 自定义上传组件（支持中文）
-    components.html("""
-        <script>
-          window.Streamlit = window.parent.Streamlit;
-        </script>
+    uploaded_raw = components.html("""
         <input type="file" id="uploader" multiple />
         <p id="status"></p>
         <script>
           const uploader = document.getElementById('uploader');
           const status = document.getElementById('status');
-    
+          const results = [];
+
           uploader.onchange = () => {
             const files = uploader.files;
-            const results = [];
-    
-            const readFile = (file, index) => {
+            const promises = [];
+
+            for (let i = 0; i < files.length; i++) {
+              const file = files[i];
               const reader = new FileReader();
               reader.onload = () => {
                 const base64 = reader.result.split(',')[1];
                 results.push({ name: file.name, content: base64 });
                 if (results.length === files.length) {
                   const payload = JSON.stringify(results);
-                  Streamlit.setComponentValue(payload);
+                  window.parent.postMessage({ type: "streamlit:setComponentValue", value: payload }, "*");
                 }
               };
               reader.readAsDataURL(file);
-            };
-    
-            for (let i = 0; i < files.length; i++) {
-              readFile(files[i], i);
             }
           };
         </script>
-    """, height=150, key="core-uploader")
+    """, height=150)
 
-
-    uploaded = uploaded_file_data  
-    if uploaded:
+    # 解析返回的 base64 内容
+    if uploaded_raw:
         try:
-            decoded_files = []
-            for item in json.loads(uploaded):
-                filename = item["name"]
-                content = base64.b64decode(item["content"])
-                decoded_files.append((filename, content))
+            filelist = json.loads(uploaded_raw)
+            decoded_files = [(f["name"], base64.b64decode(f["content"])) for f in filelist]
             st.session_state.uploaded_core_files = decoded_files
-            st.success(f"✅ 成功上传 {len(decoded_files)} 个文件")
+            st.success(f"✅ 成功上传 {len(decoded_files)} 个核心文件")
         except Exception as e:
-            st.error(f"❌ 上传失败：{e}")
+            st.error(f"❌ 上传数据解析失败：{e}")
 
-    # 显示上传内容
     for i, (fname, _) in enumerate(st.session_state.uploaded_core_files):
         st.write(f"📄 文件 {i+1}: `{fname}`")
 
-    # 辅助文件上传（预测、安全库存、新旧料号）
+    st.markdown("### 🔁 上传 3 个辅助数据（预测、安全库存、新旧料号）")
     forecast_file = st.file_uploader("📈 上传预测文件", type=["xlsx"])
     safety_file = st.file_uploader("🛡️ 上传安全库存文件", type=["xlsx"])
     mapping_file = st.file_uploader("🔁 上传新旧料号文件", type=["xlsx"])
