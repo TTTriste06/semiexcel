@@ -40,9 +40,12 @@ def get_uploaded_files():
         key="main_files"
     )
 
-    uploaded_dict = {}    
-    for file in uploaded_files:
-        uploaded_dict[file.name] = file
+    uploaded_dict = {}
+    for i, file in enumerate(uploaded_files):
+        safe_name = f"file{i+1}.xlsx"  # 替代中文名
+        uploaded_dict[safe_name] = file
+        st.write(f"原始文件名：{file.name} 已映射为：{safe_name}")
+
 
     # 输出上传文件名调试
     st.write("✅ 已上传文件名：", list(uploaded_dict.keys()))
