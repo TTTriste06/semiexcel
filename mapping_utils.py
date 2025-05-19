@@ -53,9 +53,9 @@ def apply_mapping_and_merge(df, mapping_df, field_map, verbose=True):
         )
         
         # 对满足条件的行进行整体替换
-        df_merged.loc[mask, "规格"] = df_merged.loc[mask_None, "新规格"]
-        df_merged.loc[mask, "品名"] = df_merged.loc[mask_None, "新品名"]
-        df_merged.loc[mask, "晶圆品名"] = df_merged.loc[mask_None, "新晶圆品名"]
+        df_merged.loc[mask_None, "规格"] = df_merged.loc[mask_None, "新规格"]
+        df_merged.loc[mask_None, "品名"] = df_merged.loc[mask_None, "新品名"]
+        df_merged.loc[mask_None, "晶圆品名"] = df_merged.loc[mask_None, "新晶圆品名"]
 
         # 替换三列值
         # df_merged[spec_col] = df_merged["新规格"].combine_first(df_merged[spec_col])
