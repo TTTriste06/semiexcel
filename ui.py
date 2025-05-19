@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
+import streamlit.components.v1 as components
 import base64
+import json
 from config import CONFIG
 from memory_manager import clean_memory, display_debug_memory_stats
 from io import BytesIO
@@ -10,7 +12,7 @@ def setup_sidebar():
         st.title("欢迎使用数据汇总工具")
         st.markdown("---")
         st.markdown("### 功能简介：")
-        st.markdown("- 上传 5 个主数据表（将自动重命名）")
+        st.markdown("- 上传 5 个主数据表（支持中文文件名）")
         st.markdown("- 上传辅助数据（预测、安全库存、新旧料号）")
         st.markdown("- 自动生成汇总 Excel 文件")
 
@@ -26,24 +28,48 @@ def get_uploaded_files():
     manual_month = st.text_input("📅 输入历史数据截止月份（格式: YYYY-MM，可留空表示不筛选）")
     CONFIG["selected_month"] = manual_month.strip() if manual_month.strip() else None
 
-    st.markdown("### 🔽 上传 5 个核心 Excel 文件（中文文件名将自动重命名）")
+    st.markdown("### 🔽 上传 5 个核心 Excel 文件（支持中文名）")
 
-    uploaded_core_files = st.file_uploader(
-        "上传 5 个核心文件",
-        type=["xlsx"],
-        accept_multiple_files=True
-    )
+    uploaded_raw = components.html("""
+        <input type="file" id="uploader" multiple />
+        <p id="status"></p>
+        <script>
+          const uploader = document.getElementById('uploader');
+          const status = document.getElementById('status');
+          const results = [];
 
-    processed_files = []
-    if uploaded_core_files:
-        for idx, file in enumerate(uploaded_core_files):
-            try:
-                content = file.read()
-                fake_name = f"core_{idx+1}.xlsx"  # 避免中文名
-                processed_files.append((fake_name, content))
-                st.write(f"📄 文件 {idx+1}: 原名 `{file.name}` → 存储名 `{fake_name}`")
-            except Exception as e:
-                st.error(f"❌ 无法读取文件 {file.name}: {e}")
+          uploader.onchange = () => {
+            const files = uploader.files;
+            const promises = [];
+
+            for (let i = 0; i < files.length; i++) {
+              const file = files[i];
+              const reader = new FileReader();
+              reader.onload = () => {
+                const base64 = reader.result.split(',')[1];
+                results.push({ name: file.name, content: base64 });
+                if (results.length === files.length) {
+                  const payload = JSON.stringify(results);
+                  window.parent.postMessage({ type: "streamlit:setComponentValue", value: payload }, "*");
+                }
+              };
+              reader.readAsDataURL(file);
+            }
+          };
+        </script>
+    """, height=150)
+
+    core_files = []
+    if uploaded_raw:
+        try:
+            file_objs = json.loads(uploaded_raw)
+            core_files = [(f["name"], base64.b64decode(f["content"])) for f in file_objs]
+            st.success(f"✅ 成功上传 {len(core_files)} 个核心文件")
+        except Exception as e:
+            st.error(f"❌ 上传失败：{e}")
+
+    for i, (fname, _) in enumerate(core_files):
+        st.write(f"📄 文件 {i+1}: `{fname}`")
 
     st.markdown("### 🔁 上传辅助数据文件（预测、安全库存、新旧料号）")
     forecast_file = st.file_uploader("📈 上传预测文件", type=["xlsx"])
@@ -51,5 +77,4 @@ def get_uploaded_files():
     mapping_file = st.file_uploader("🔁 上传新旧料号文件", type=["xlsx"])
 
     start = st.button("🚀 点击生成汇总 Excel 文件")
-
-    return processed_files, forecast_file, safety_file, mapping_file, start
+    return core_files, forecast_file, safety_file, mapping_file, start
