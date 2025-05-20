@@ -84,3 +84,28 @@ def mark_unmatched_keys_on_sheet(ws, unmatched_keys, wafer_col=1, spec_col=2, na
         if (wafer, spec, name) in unmatched_set:
             for col in range(1, ws.max_column + 1):
                 ws.cell(row=row, column=col).fill = red_fill
+
+def mark_keys_on_sheet(ws, key_set, key_cols=(1, 2, 3)):
+    """
+    在工作表中标黄匹配 key_set 中的行，基于主键列匹配。
+
+    参数:
+    - ws: openpyxl worksheet
+    - key_set: set of tuple，例如 {("WaferA", "Spec1", "NameX"), ...}
+    - key_cols: 表示主键所在的列号 (从1开始)，默认是 (1, 2, 3) 对应“晶圆品名”, “规格”, “品名”
+    """
+    yellow_fill = PatternFill(start_color="FFFF99", end_color="FFFF99", fill_type="solid")
+
+    def standardize(val):
+        return str(val).strip() if val is not None else ''
+
+    standardized_keys = set(tuple(standardize(x) for x in key) for key in key_set)
+
+    for row in range(2, ws.max_row + 1):  # 从第2行开始（跳过表头）
+        key = tuple(
+            standardize(ws.cell(row=row, column=col).value)
+            for col in key_cols
+        )
+        if key in standardized_keys:
+            for col in range(1, ws.max_column + 1):
+                ws.cell(row=row, column=col).fill = yellow_fill
