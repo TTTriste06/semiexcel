@@ -19,44 +19,49 @@ def main():
             st.error("❌ 请上传所有 5 个主要文件后再点击生成！")
             return
 
-        # GitHub 辅助文件名称
-        github_files = {
-            "赛卓-预测.xlsx": forecast_file,
-            "赛卓-安全库存.xlsx": safety_file,
-            "赛卓-新旧料号.xlsx": mapping_file
+        # GitHub 上传/下载文件的目标名称
+        github_targets = {
+            forecast_file.name if forecast_file else "赛卓-预测.xlsx": "赛卓-预测.xlsx",
+            safety_file.name if safety_file else "赛卓-安全库存.xlsx": "赛卓-安全库存.xlsx",
+            mapping_file.name if mapping_file else "赛卓-新旧料号.xlsx": "赛卓-新旧料号.xlsx"
+        }
+
+        # 文件对象
+        local_files = {
+            forecast_file.name if forecast_file else "赛卓-预测.xlsx": forecast_file,
+            safety_file.name if safety_file else "赛卓-安全库存.xlsx": safety_file,
+            mapping_file.name if mapping_file else "赛卓-新旧料号.xlsx": mapping_file
         }
 
         additional_sheets = {}
 
-        for name, file in github_files.items():
-            st.write(name)
-            st.write(file)
-            if file:  # 如果上传了新文件，则保存到 GitHub
+        for upload_name, github_name in github_targets.items():
+            file = local_files[upload_name]
+
+            st.write(f"处理文件: {upload_name}（GitHub 名: {github_name}）")
+
+            if file:  # 用户上传了新文件
                 file_bytes = file.read()
                 file_io = BytesIO(file_bytes)
-                
-                upload_to_github(BytesIO(file_bytes), name)
 
-                # 保留原始名字作为字典 key
+                upload_to_github(BytesIO(file_bytes), github_name)
+
                 df = pd.read_excel(file_io)
-                additional_sheets[name.replace(".xlsx", "")] = df
+                additional_sheets[upload_name.replace(".xlsx", "")] = df
             else:
                 try:
-                    # 下载时也编码文件名
-                    content = download_from_github(name)
-
+                    content = download_from_github(github_name)
                     df = pd.read_excel(BytesIO(content))
-                    additional_sheets[name.replace(".xlsx", "")] = df
-                    st.info(f"📂 使用了 GitHub 上存储的历史版本：{name}")
+                    additional_sheets[upload_name.replace(".xlsx", "")] = df
+                    st.info(f"📂 使用了 GitHub 上的历史版本：{github_name}")
                 except FileNotFoundError:
-                    st.warning(f"⚠️ 未提供且未在 GitHub 找到历史文件：{name}")
-              
+                    st.warning(f"⚠️ 未提供且 GitHub 上找不到：{github_name}")
+
         # 生成 Excel 汇总
         buffer = BytesIO()
         processor = PivotProcessor()
         processor.process(uploaded_files, buffer, additional_sheets)
 
-        # 提供下载按钮
         file_name = f"运营数据订单-在制-库存汇总报告_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
         st.success("✅ 汇总完成！你可以下载结果文件：")
         st.download_button(
@@ -66,8 +71,5 @@ def main():
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
-
-
 if __name__ == "__main__":
     main()
-
