@@ -72,15 +72,21 @@ def download_from_github(filename):
     else:
         raise FileNotFoundError(f"❌ GitHub 上找不到文件：{filename} (HTTP {response.status_code})")
 
-def load_or_fallback_from_github(label, key, filename, additional_sheets):
-    """优先加载上传文件；否则从 GitHub 加载历史版本"""
+def load_or_fallback_from_github(label: str, key: str, filename: str, additional_sheets: dict):
+    """
+    尝试从上传组件读取文件，否则从 GitHub 拉取 fallback 文件
+    并写入 additional_sheets 字典。
+    """
     uploaded_file = st.file_uploader(f"📎 上传 {label} 文件", type=["xlsx"], key=key)
-
+    
     if uploaded_file:
-        df = pd.read_excel(uploaded_file)
-        additional_sheets[filename] = df
-        upload_to_github(uploaded_file, filename)
-        st.success(f"✅ 已上传并缓存：{filename}")
+        try:
+            df = pd.read_excel(uploaded_file)
+            additional_sheets[filename] = df
+            upload_to_github(uploaded_file, filename)
+            st.success(f"✅ 已上传并缓存：{filename}")
+        except Exception as e:
+            st.error(f"❌ 解析上传文件失败：{filename} - {e}")
     else:
         try:
             content = download_from_github(filename)
@@ -91,4 +97,4 @@ def load_or_fallback_from_github(label, key, filename, additional_sheets):
             else:
                 st.warning(f"⚠️ 未提供且未在 GitHub 找到历史文件：{filename}")
         except Exception as e:
-            st.error(f"❌ 加载 {filename} 失败: {e}")
+            st.error(f"❌ 从 GitHub 加载 {filename} 失败: {e}")
