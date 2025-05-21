@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl import load_workbook
-from config import CONFIG, REVERSE_MAPPING
+from config import CONFIG
 from excel_utils import (
     adjust_column_width,
     clean_df,
