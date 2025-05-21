@@ -6,7 +6,7 @@ from urllib.parse import quote
 
 # GitHub 配置
 GITHUB_TOKEN_KEY = "GITHUB_TOKEN"  # secrets.toml 中的密钥名
-REPO_NAME = "TTTriste06/semiment"
+REPO_NAME = "TTTriste06/semiexcel"
 BRANCH = "main"
 
 FILE_RENAME_MAPPING = {
