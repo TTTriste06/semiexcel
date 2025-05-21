@@ -19,15 +19,9 @@ def main():
             st.error("❌ 请上传所有 5 个主要文件后再点击生成！")
             return
 
-        # GitHub 辅助文件名称
-        github_files = {
-            "赛卓-预测.xlsx": forecast_file,
-            "赛卓-安全库存.xlsx": safety_file,
-            "赛卓-新旧料号.xlsx": mapping_file
-        }
-
         additional_sheets = {}
 
+        # 加载附加文件（上传或 GitHub fallback）
         load_or_fallback_from_github("新旧料号", "mapping_file", "赛卓-新旧料号.xlsx", additional_sheets)
         load_or_fallback_from_github("安全库存", "safety_file", "赛卓-安全库存.xlsx", additional_sheets)
         load_or_fallback_from_github("预测", "forecast_file", "赛卓-预测.xlsx", additional_sheets)
@@ -47,8 +41,5 @@ def main():
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
-
-
 if __name__ == "__main__":
     main()
-
