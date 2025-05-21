@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 from config import CONFIG
-from memory_manager import clean_memory, display_debug_memory_stats
 
 def setup_sidebar():
     with st.sidebar:
