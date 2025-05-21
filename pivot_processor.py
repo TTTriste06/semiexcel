@@ -66,7 +66,6 @@ class PivotProcessor:
                         continue
 
                     sheet_key = filename.replace(".xlsx", "")[:30]
-                    sheet_name = REVERSE_MAPPING.get(sheet_key, sheet_key)
 
                     if sheet_key in FIELD_MAPPINGS and not mapping_df.empty:
                         mapping_df.columns = [
@@ -174,7 +173,6 @@ class PivotProcessor:
                     df.to_excel(writer, sheet_name="赛卓-新旧料号", index=False)
                     adjust_column_width(writer, "赛卓-新旧料号", df)
                 else:
-                    sheet_name = REVERSE_MAPPING.get(key, key)
                     df.to_excel(writer, sheet_name=sheet_name, index=False)
                     adjust_column_width(writer, sheet_name, df)
 
