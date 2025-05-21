@@ -9,6 +9,11 @@ GITHUB_TOKEN_KEY = "GITHUB_TOKEN"  # secrets.toml 中的密钥名
 REPO_NAME = "TTTriste06/semiment"
 BRANCH = "main"
 
+FILE_RENAME_MAPPING = {
+    "赛卓-新旧料号.xlsx": "mapping_file.xlsx",
+    "赛卓-安全库存.xlsx": "safety_file.xlsx",
+    "赛卓-预测.xlsx": "pred_file.xlsx"
+}
 
 def upload_to_github(file_obj, filename):
     """
@@ -73,23 +78,22 @@ def download_from_github(filename):
         raise FileNotFoundError(f"❌ GitHub 上找不到文件：{filename} (HTTP {response.status_code})")
 
 def load_or_fallback_from_github(label: str, key: str, filename: str, additional_sheets: dict):
-    """
-    尝试从上传组件读取文件，否则从 GitHub 拉取 fallback 文件
-    并写入 additional_sheets 字典。
-    """
+    """优先加载上传文件，否则从 GitHub 加载 fallback 文件"""
     uploaded_file = st.file_uploader(f"📎 上传 {label} 文件", type=["xlsx"], key=key)
-    
+
+    github_filename = FILE_RENAME_MAPPING.get(filename, filename)
+
     if uploaded_file:
         try:
             df = pd.read_excel(uploaded_file)
             additional_sheets[filename] = df
-            upload_to_github(uploaded_file, filename)
+            upload_to_github(uploaded_file, github_filename)  # ✅ 上传到 GitHub 使用英文名
             st.success(f"✅ 已上传并缓存：{filename}")
         except Exception as e:
             st.error(f"❌ 解析上传文件失败：{filename} - {e}")
     else:
         try:
-            content = download_from_github(filename)
+            content = download_from_github(github_filename)  # ✅ 下载 GitHub 使用英文名
             if content:
                 df = pd.read_excel(BytesIO(content))
                 additional_sheets[filename] = df
