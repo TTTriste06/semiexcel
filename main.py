@@ -29,6 +29,8 @@ def main():
         additional_sheets = {}
 
         for name, file in github_files.items():
+            st.write(name)
+            st.write(file)
             if file:  # 如果上传了新文件，则保存到 GitHub
                 file_bytes = file.read()
                 file_io = BytesIO(file_bytes)
