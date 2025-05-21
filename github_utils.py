@@ -2,6 +2,7 @@ from io import BytesIO
 import base64
 import requests
 import streamlit as st
+import pandas as pd
 from urllib.parse import quote
 
 # GitHub 配置
