@@ -11,28 +11,32 @@ def main():
     st.set_page_config(page_title="Excel数据透视汇总工具", layout="wide")
     setup_sidebar()
 
-    # ⛳ 设置一个状态保存
     if "started" not in st.session_state:
         st.session_state.started = False
 
-    # ✅ 只在未开始时显示上传区域
     if not st.session_state.started:
         uploaded_files, forecast_file, safety_file, mapping_file, start = get_uploaded_files()
+
         if start:
             if len(uploaded_files) < 5:
                 st.error("❌ 请上传所有 5 个主要文件后再点击生成！")
                 return
-            st.session_state.started = True  # ✅ 设置开始标志
-    else:
-        # 防止后续变量未定义
-        uploaded_files = st.session_state.get("uploaded_files")
-        forecast_file = st.session_state.get("forecast_file")
-        safety_file = st.session_state.get("safety_file")
-        mapping_file = st.session_state.get("mapping_file")
 
-    # ✅ 一旦开始就只走处理逻辑
-    if st.session_state.started:
+            st.session_state.started = True
+            st.session_state.uploaded_files = uploaded_files
+            st.session_state.forecast_file = forecast_file
+            st.session_state.safety_file = safety_file
+            st.session_state.mapping_file = mapping_file
+            st.rerun()
+
+    else:
+        uploaded_files = st.session_state.uploaded_files
+        forecast_file = st.session_state.forecast_file
+        safety_file = st.session_state.safety_file
+        mapping_file = st.session_state.mapping_file
+
         additional_sheets = {}
+
         load_or_fallback_from_github("新旧料号", "mapping_file", "赛卓-新旧料号.xlsx", additional_sheets)
         load_or_fallback_from_github("安全库存", "safety_file", "赛卓-安全库存.xlsx", additional_sheets)
         load_or_fallback_from_github("预测", "forecast_file", "赛卓-预测.xlsx", additional_sheets)
