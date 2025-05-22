@@ -191,9 +191,9 @@ class PivotProcessor:
 
             output_buffer.seek(0)
 
+            # 🔍 预览生成的 Excel 内容：每个 sheet 分别放在 tab 中
             preview_io = io.BytesIO(output_buffer.read())
-            
-            # 预览 Excel 中每个 sheet
+
             try:
                 xls = pd.ExcelFile(preview_io)
                 tabs = st.tabs(xls.sheet_names)
@@ -205,7 +205,8 @@ class PivotProcessor:
                         except Exception as e:
                             st.error(f"❌ `{sheet_name}` 预览失败: {e}")
             except Exception as e:
-                st.warning(f\"⚠️ 无法预览生成的 Excel 文件: {e}\")
+                st.warning(f"⚠️ 无法预览生成的 Excel 文件: {e}")
+
 
 
     def _process_date_column(self, df, date_col, date_format):
