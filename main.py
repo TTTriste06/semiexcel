@@ -19,7 +19,6 @@ def main():
             st.error("❌ 请上传所有 5 个主要文件后再点击生成！")
             return
 
-        # GitHub 辅助文件名称
         github_files = {
             "赛卓-预测.xlsx": forecast_file,
             "赛卓-安全库存.xlsx": safety_file,
@@ -29,37 +28,28 @@ def main():
         additional_sheets = {}
 
         for name, file in github_files.items():
-            if file:  # 如果上传了新文件，则保存到 GitHub
+            if file:
                 file_bytes = file.read()
                 file_io = BytesIO(file_bytes)
-                
-                # 对中文文件名进行 URL 编码，避免 GitHub 报 400
                 safe_name = quote(name)
-
-                # 上传使用编码后的文件名
                 upload_to_github(BytesIO(file_bytes), safe_name)
-
-                # 保留原始名字作为字典 key
                 df = pd.read_excel(file_io)
                 additional_sheets[name.replace(".xlsx", "")] = df
             else:
                 try:
-                    # 下载时也编码文件名
                     safe_name = quote(name)
                     content = download_from_github(safe_name)
-
                     df = pd.read_excel(BytesIO(content))
                     additional_sheets[name.replace(".xlsx", "")] = df
                     st.info(f"📂 使用了 GitHub 上存储的历史版本：{name}")
                 except FileNotFoundError:
                     st.warning(f"⚠️ 未提供且未在 GitHub 找到历史文件：{name}")
-              
+
         # 生成 Excel 汇总
         buffer = BytesIO()
         processor = PivotProcessor()
         processor.process(uploaded_files, buffer, additional_sheets)
 
-        # 提供下载按钮
         file_name = f"运营数据订单-在制-库存汇总报告_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
         st.success("✅ 汇总完成！你可以下载结果文件：")
         st.download_button(
@@ -69,8 +59,24 @@ def main():
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
+        # 🧾 在页面上预览 Excel 各个 sheet
+        try:
+            buffer.seek(0)
+            with pd.ExcelFile(buffer, engine="openpyxl") as xls:
+                sheet_names = xls.sheet_names
+                tabs = st.tabs(sheet_names)
 
+                for i, sheet_name in enumerate(sheet_names):
+                    try:
+                        df = pd.read_excel(xls, sheet_name=sheet_name)
+                        with tabs[i]:
+                            st.subheader(f"📄 {sheet_name}")
+                            st.dataframe(df, use_container_width=True)
+                    except Exception as e:
+                        with tabs[i]:
+                            st.error(f"无法读取工作表 `{sheet_name}`: {e}")
+        except Exception as e:
+            st.warning(f"⚠️ 预览 Excel 报告失败：{e}")
 
 if __name__ == "__main__":
     main()
-
