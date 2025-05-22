@@ -195,7 +195,7 @@ class PivotProcessor:
             preview_io = io.BytesIO(output_buffer.read())
 
             try:
-                xls = pd.ExcelFile(preview_io)
+                xls = pd.ExcelFile(preview_io, engine="openpyxl")
                 tabs = st.tabs(xls.sheet_names)
                 for tab, sheet_name in zip(tabs, xls.sheet_names):
                     with tab:
