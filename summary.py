@@ -293,8 +293,8 @@ def append_product_in_progress(summary_df, product_in_progress_df, mapping_df):
             unmatched_keys.append(key)
 
     # 打印匹配日志
-    st.write("【半成品匹配日志】")
-    for log in check_log:
-        st.write(log)
+    # st.write("【半成品匹配日志】")
+    # for log in check_log:
+        # st.write(log)
 
     return summary_df, unmatched_keys
