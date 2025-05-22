@@ -190,21 +190,7 @@ class PivotProcessor:
                     ws.auto_filter.ref = f"A1:{col_letter}1"
 
             output_buffer.seek(0)
-        with pd.ExcelFile(output_buffer, engine="openpyxl") as xls:
-            sheet_names = xls.sheet_names
-            tabs = st.tabs(sheet_names)
         
-            for i, sheet_name in enumerate(sheet_names):
-                try:
-                    df = pd.read_excel(xls, sheet_name=sheet_name)
-                    with tabs[i]:
-                        st.subheader(f"📄 {sheet_name}")
-                        st.dataframe(df, use_container_width=True)
-                except Exception as e:
-                    with tabs[i]:
-                        st.error(f"无法读取工作表 `{sheet_name}`: {e}")
-        
-
 
 
     def _process_date_column(self, df, date_col, date_format):
