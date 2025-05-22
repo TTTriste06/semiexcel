@@ -51,8 +51,7 @@ class PivotProcessor:
         key_in_progress = []
 
         mapping_df = additional_sheets.get("赛卓-新旧料号", pd.DataFrame())
-        st.write(mapping_df)
-
+        
         all_mapped_keys = set()
 
         with pd.ExcelWriter(output_buffer, engine="openpyxl") as writer:
