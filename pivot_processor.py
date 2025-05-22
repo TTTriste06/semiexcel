@@ -189,6 +189,23 @@ class PivotProcessor:
                     ws.auto_filter.ref = f"A1:{col_letter}1"
 
             output_buffer.seek(0)
+           
+            excel_bytes = output_buffer.read()
+            output_buffer.seek(0)
+            
+            # 加载 Excel 内容预览
+            xls = pd.ExcelFile(io.BytesIO(excel_bytes))
+            tab_titles = xls.sheet_names
+            
+            tabs = st.tabs(tab_titles)
+            for tab, sheet_name in zip(tabs, tab_titles):
+                with tab:
+                    try:
+                        df = xls.parse(sheet_name)
+                        st.dataframe(df, use_container_width=True)
+                    except Exception as e:
+                        st.error(f"❌ 预览失败 - `{sheet_name}`: {e}")
+
 
     def _process_date_column(self, df, date_col, date_format):
         if pd.api.types.is_numeric_dtype(df[date_col]):
