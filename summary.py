@@ -49,8 +49,8 @@ def merge_safety_inventory(summary_df, safety_df):
     # 剩下的就是未被使用的
     unmatched_keys = list(all_keys - used_keys)
 
-    st.write("用到的：")
-    st.write(used_keys)
+    # st.write("用到的：")
+    # st.write(used_keys)
 
     return merged, unmatched_keys
 
@@ -62,14 +62,6 @@ def append_unfulfilled_summary_columns(summary_df, pivoted_df):
     """
     提取历史未交订单 + 各未来月份未交订单列，计算总未交订单，并将它们添加到汇总 summary_df 的末尾。
     返回合并后的 summary_df 和未匹配的主键列表。
-
-    参数:
-    - summary_df: 汇总 sheet（包含晶圆品名、规格、品名）
-    - pivoted_df: 已透视后的未交订单表（含列如 未交订单数量_2025-03）
-
-    返回:
-    - merged: 增加了新列的 summary_df
-    - unmatched_keys: list of (晶圆品名, 规格, 品名)
     """
 
     # 匹配所有未交订单列
@@ -103,6 +95,7 @@ def append_unfulfilled_summary_columns(summary_df, pivoted_df):
     return merged, unmatched_keys
 
 
+
 def append_forecast_to_summary(summary_df, forecast_df):
     """
     从预测表中提取与 summary_df 匹配的预测记录，并返回未匹配的主键列表。
@@ -117,7 +110,7 @@ def append_forecast_to_summary(summary_df, forecast_df):
     """
 
     # Debug: 显示原始预测表列
-    st.write("原始预测表列名：", forecast_df.columns.tolist())
+    # st.write("原始预测表列名：", forecast_df.columns.tolist())
 
     # 重命名主键列
     forecast_df = forecast_df.rename(columns={
@@ -130,7 +123,7 @@ def append_forecast_to_summary(summary_df, forecast_df):
 
     # 找出预测月份列（如“5月预测”、“6月预测”...）
     month_cols = [col for col in forecast_df.columns if isinstance(col, str) and "预测" in col]
-    st.write("识别到的预测列：", month_cols)
+    # st.write("识别到的预测列：", month_cols)
 
     if not month_cols:
         st.warning("⚠️ 没有识别到任何预测列，请检查列名是否包含'预测'")
@@ -152,7 +145,7 @@ def append_forecast_to_summary(summary_df, forecast_df):
 
     # 合并进 summary
     merged = summary_df.merge(forecast_df, on=key_cols, how="left")
-    st.write("合并后的汇总示例：", merged.head(3))
+    # st.write("合并后的汇总示例：", merged.head(3))
 
     return merged, unmatched_keys
 
@@ -197,7 +190,7 @@ def merge_finished_inventory(summary_df, finished_df):
         if key not in summary_keys:
             unmatched_keys.append(key)
 
-    st.write("✅ 正在按主键合并以下列：", value_cols)
+    # st.write("✅ 正在按主键合并以下列：", value_cols)
     merged = summary_df.merge(finished_df[key_cols + value_cols], on=key_cols, how="left")
 
     return merged, unmatched_keys
@@ -241,8 +234,15 @@ def append_product_in_progress(summary_df, product_in_progress_df, mapping_df):
 
     # 半成品逻辑
     semi_rows = mapping_df[mapping_df["半成品"].notna() & (mapping_df["半成品"] != "")]
-    semi_info_table = semi_rows[["新规格", "新品名", "新晶圆品名", "半成品"]].copy()
+    semi_info_table = semi_rows[[
+        "新规格", "新品名", "新晶圆品名",
+        "旧规格", "旧品名", "旧晶圆品名",
+        "半成品"
+    ]].copy()
     semi_info_table["未交数据和"] = 0
+
+    # 日志记录每一次匹配尝试
+    check_log = []
 
     for idx, row in semi_info_table.iterrows():
         matched = product_in_progress_df[
@@ -250,8 +250,35 @@ def append_product_in_progress(summary_df, product_in_progress_df, mapping_df):
             (product_in_progress_df["晶圆型号"] == row["新晶圆品名"]) &
             (product_in_progress_df["产品品名"] == row["半成品"])
         ]
-        semi_info_table.at[idx, "未交数据和"] = matched[numeric_cols].sum().sum() if not matched.empty else 0
+        if not matched.empty:
+            value = matched[numeric_cols].sum().sum()
+            source = "新规格/新晶圆匹配"
+        else:
+            matched = product_in_progress_df[
+                (product_in_progress_df["产品规格"] == row["旧规格"]) &
+                (product_in_progress_df["晶圆型号"] == row["旧晶圆品名"]) &
+                (product_in_progress_df["产品品名"] == row["半成品"])
+            ]
+            if not matched.empty:
+                value = matched[numeric_cols].sum().sum()
+                source = "旧规格/旧晶圆回退匹配"
+            else:
+                value = 0
+                source = "未匹配"
 
+        semi_info_table.at[idx, "未交数据和"] = value
+        check_log.append({
+            "半成品": row["半成品"],
+            "新品名": row["新品名"],
+            "新规格": row["新规格"],
+            "新晶圆品名": row["新晶圆品名"],
+            "旧规格": row["旧规格"],
+            "旧晶圆品名": row["旧晶圆品名"],
+            "匹配来源": source,
+            "匹配值": value
+        })
+
+    # 写入 summary_df
     for idx, row in semi_info_table.iterrows():
         key = (row["新晶圆品名"], row["新规格"], row["新品名"])
         mask = (
@@ -264,5 +291,10 @@ def append_product_in_progress(summary_df, product_in_progress_df, mapping_df):
             used_keys.add(key)
         else:
             unmatched_keys.append(key)
+
+    # 打印匹配日志
+    # st.write("【半成品匹配日志】")
+    # for log in check_log:
+        # st.write(log)
 
     return summary_df, unmatched_keys
