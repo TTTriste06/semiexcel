@@ -189,11 +189,12 @@ class PivotProcessor:
                 else:
                     ws.auto_filter.ref = f"A1:{col_letter}1"
 
+            
+            # ⚠️ 重新写入完整内容用于预览
             output_buffer.seek(0)
-
-            # 🔍 预览生成的 Excel 内容：每个 sheet 分别放在 tab 中
-            preview_io = io.BytesIO(output_buffer.read())
-
+            excel_bytes = output_buffer.getvalue()  # ✅ 这才是完整的 .xlsx 内容
+            preview_io = io.BytesIO(excel_bytes)
+            
             try:
                 xls = pd.ExcelFile(preview_io, engine="openpyxl")
                 tabs = st.tabs(xls.sheet_names)
