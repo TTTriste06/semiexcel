@@ -49,6 +49,8 @@ class PivotProcessor:
         key_finished = []
         key_in_progress = []
 
+        st.write(additional_sheets)
+
         mapping_df = additional_sheets.get("mapping", pd.DataFrame())
 
         all_mapped_keys = set()
