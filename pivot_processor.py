@@ -192,9 +192,12 @@ class PivotProcessor:
             
             # ⚠️ 重新写入完整内容用于预览
             output_buffer.seek(0)
-            excel_bytes = output_buffer.getvalue()  # ✅ 这才是完整的 .xlsx 内容
+
+            # 🔍 预览生成的 Excel 内容：每个 sheet 分别放在 tab 中
+            import io
+            excel_bytes = output_buffer.getvalue()
             preview_io = io.BytesIO(excel_bytes)
-            
+
             try:
                 xls = pd.ExcelFile(preview_io, engine="openpyxl")
                 tabs = st.tabs(xls.sheet_names)
@@ -207,6 +210,7 @@ class PivotProcessor:
                             st.error(f"❌ `{sheet_name}` 预览失败: {e}")
             except Exception as e:
                 st.warning(f"⚠️ 无法预览生成的 Excel 文件: {e}")
+
 
 
 
