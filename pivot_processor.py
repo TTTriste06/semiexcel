@@ -189,28 +189,21 @@ class PivotProcessor:
                 else:
                     ws.auto_filter.ref = f"A1:{col_letter}1"
 
-            
-            # ⚠️ 重新写入完整内容用于预览
             output_buffer.seek(0)
-
-            # 🔍 预览生成的 Excel 内容：每个 sheet 分别放在 tab 中
-            import io
-            excel_bytes = output_buffer.getvalue()
-            preview_io = io.BytesIO(excel_bytes)
-
-            try:
-                xls = pd.ExcelFile(preview_io, engine="openpyxl")
-                tabs = st.tabs(xls.sheet_names)
-                for tab, sheet_name in zip(tabs, xls.sheet_names):
-                    with tab:
-                        try:
-                            df = xls.parse(sheet_name)
-                            st.dataframe(df, use_container_width=True)
-                        except Exception as e:
-                            st.error(f"❌ `{sheet_name}` 预览失败: {e}")
-            except Exception as e:
-                st.warning(f"⚠️ 无法预览生成的 Excel 文件: {e}")
-
+        with pd.ExcelFile(output_buffer, engine="openpyxl") as xls:
+            sheet_names = xls.sheet_names
+            tabs = st.tabs(sheet_names)
+        
+            for i, sheet_name in enumerate(sheet_names):
+                try:
+                    df = pd.read_excel(xls, sheet_name=sheet_name)
+                    with tabs[i]:
+                        st.subheader(f"📄 {sheet_name}")
+                        st.dataframe(df, use_container_width=True)
+                except Exception as e:
+                    with tabs[i]:
+                        st.error(f"无法读取工作表 `{sheet_name}`: {e}")
+        
 
 
 
