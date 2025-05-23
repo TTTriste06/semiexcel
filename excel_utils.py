@@ -231,7 +231,6 @@ def merge_duplicate_rows_by_key(df: pd.DataFrame, field_map: dict, verbose=True)
 
     增加 verbose 输出用于调试未合并成功的情况
     """
-    import streamlit as st
 
     key_cols = [field_map["规格"], field_map["品名"], field_map["晶圆品名"]]
 
