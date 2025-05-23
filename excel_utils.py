@@ -222,49 +222,29 @@ def clean_key_fields(df, field_map):
     return df
 
 
-def merge_duplicate_rows_by_key(df: pd.DataFrame, field_map: dict, verbose=True) -> pd.DataFrame:
+def merge_duplicate_rows_by_key(df: pd.DataFrame, field_map: dict) -> pd.DataFrame:
     """
     合并给定表格中 '规格' + '品名' + '晶圆品名' 相同的行：
     - 数值列求和
-    - 其他字段取第一行
-    - 主键字段来自 field_map
+    - 非主键字段取第一行
+    - 主键字段来自 FIELD_MAPPINGS
 
-    增加 verbose 输出用于调试未合并成功的情况
+    参数:
+        df (pd.DataFrame): 待处理的表格
+        field_map (dict): 如 {'规格': '产品规格', '品名': '产品品名', '晶圆品名': '晶圆型号'}
+
+    返回:
+        pd.DataFrame: 合并后的表格
     """
-
     key_cols = [field_map["规格"], field_map["品名"], field_map["晶圆品名"]]
 
     for col in key_cols:
         if col not in df.columns:
             raise ValueError(f"缺少必要列：{col}")
 
-    # 主键列清洗
-    for col in key_cols:
-        df[col] = (
-            df[col]
-            .astype(str)
-            .str.strip()
-            .str.replace(r"\s+", "", regex=True)
-            .str.replace(r"[\u200b\u200e\u200f\n\r]", "", regex=True)
-        )
-
-    # 调试输出重复主键组合
-    dup_keys = df.groupby(key_cols).size().reset_index(name="count")
-    dup_keys = dup_keys[dup_keys["count"] > 1]
-
-    if verbose and not dup_keys.empty:
-        st.warning(f"⚠️ 检测到 {len(dup_keys)} 个重复主键组合，准备合并：")
-        for idx, row in dup_keys.iterrows():
-            key_values = tuple(row[col] for col in key_cols)
-            st.write(f"🔁 主键组：{key_values}")
-            st.dataframe(df[
-                (df[key_cols[0]] == key_values[0]) &
-                (df[key_cols[1]] == key_values[1]) &
-                (df[key_cols[2]] == key_values[2])
-            ])
-
-    # 数值列合并
+    # 识别非主键的数值列
     value_cols = [col for col in df.columns if col not in key_cols and pd.api.types.is_numeric_dtype(df[col])]
+
     grouped = df.groupby(key_cols, sort=False)
     merged_rows = []
 
@@ -279,5 +259,5 @@ def merge_duplicate_rows_by_key(df: pd.DataFrame, field_map: dict, verbose=True)
 
     merged_df = pd.DataFrame(merged_rows)
 
-    # 保持列顺序一致
+    # 恢复列顺序
     return merged_df[df.columns]
