@@ -64,6 +64,9 @@ def apply_mapping_and_merge(df, mapping_df, field_map, verbose=True):
 
 # 我们重新写一下apply_extended_substitute_mapping，首先找到K-V列不为空的所有行，只用保留新规格，新品名，新晶圆品名，和四组替代料号（替代规格, 替代品名, 替代晶圆），
 # 如果这组替代料号不为空，就在需要合并的sheet中找到对应信息的行，替换替代规格, 替代品名, 替代晶圆为新规格，新品名，新晶圆品名，并与之前的新规格，新品名，新晶圆品名行合并
+
+# 在合并两行的时候，只要这个sheet中对应的规格，品名，晶圆品名是一样的（每个sheet对应的名字不一样，FIELD_MAPPINGS有对照的），就需要合并这两行，如果别的非数字信息不一致，就取不是替换料号那一行的信息
+
 def apply_extended_substitute_mapping(df, mapping_df, field_map, verbose=True):
     spec_col = field_map["规格"]
     name_col = field_map["品名"]
@@ -98,11 +101,7 @@ def apply_extended_substitute_mapping(df, mapping_df, field_map, verbose=True):
                 "新晶圆品名": row["新晶圆品名"]
             })
 
-    # 替代操作并记录映射索引
-    df["_替代后规格"] = df[spec_col]
-    df["_替代后品名"] = df[name_col]
-    df["_替代后晶圆"] = df[wafer_col]
-    replaced_rows = []
+    df["_被替换"] = False
 
     for sub in substitute_records:
         mask = (
@@ -111,44 +110,37 @@ def apply_extended_substitute_mapping(df, mapping_df, field_map, verbose=True):
             (df[wafer_col] == sub["旧晶圆品名"])
         )
         if mask.any():
-            df.loc[mask, "_替代后规格"] = sub["新规格"]
-            df.loc[mask, "_替代后品名"] = sub["新品名"]
-            df.loc[mask, "_替代后晶圆"] = sub["新晶圆品名"]
+            df.loc[mask, spec_col] = sub["新规格"]
+            df.loc[mask, name_col] = sub["新品名"]
+            df.loc[mask, wafer_col] = sub["新晶圆品名"]
+            df.loc[mask, "_被替换"] = True
             if verbose:
-                st.write(
-                    f"🔁 替换: ({sub['旧规格']}, {sub['旧品名']}, {sub['旧晶圆品名']}) → "
-                    f"({sub['新规格']}, {sub['新品名']}, {sub['新晶圆品名']})，匹配行数: {mask.sum()}"
-                )
-            replaced_rows.extend(df[mask].index.tolist())
+                st.write(f"🔁 替换: ({sub['旧规格']}, {sub['旧品名']}, {sub['旧晶圆品名']}) → "
+                         f"({sub['新规格']}, {sub['新品名']}, {sub['新晶圆品名']})，替换行数: {mask.sum()}")
 
-    # 替换字段正式生效
-    df[spec_col] = df["_替代后规格"]
-    df[name_col] = df["_替代后品名"]
-    df[wafer_col] = df["_替代后晶圆"]
-
-    df.drop(columns=["_替代后规格", "_替代后品名", "_替代后晶圆"], inplace=True)
-
-    # ✅ 清洗字段后正式合并
     for col in [spec_col, name_col, wafer_col]:
         df[col] = df[col].astype(str).str.strip().str.replace("\n", "").str.replace("\r", "")
 
+    # ➕ 数值字段求和
     group_cols = [spec_col, name_col, wafer_col]
     numeric_cols = df.select_dtypes(include="number").columns.tolist()
     sum_cols = [col for col in numeric_cols if col not in group_cols]
+    df_numeric = df.groupby(group_cols, as_index=False)[sum_cols].sum()
 
-    df_grouped = df.groupby(group_cols, as_index=False)[sum_cols].sum()
+    # 💡 非数值字段保留原始（非替换）行
+    df_not_replaced = df[df["_被替换"] == False]
+    other_cols = [col for col in df.columns if col not in group_cols + sum_cols + ["_被替换"]]
+    df_other = df_not_replaced.groupby(group_cols, as_index=False)[other_cols].first()
 
-    other_cols = [col for col in df.columns if col not in group_cols + sum_cols]
-    if other_cols:
-        df_first = df.groupby(group_cols, as_index=False)[other_cols].first()
-        df_grouped = pd.merge(df_grouped, df_first, on=group_cols, how="left")
+    df_merged = pd.merge(df_numeric, df_other, on=group_cols, how="left")
+
+    df.drop(columns=["_被替换"], inplace=True, errors="ignore")
 
     matched_keys = set(
-        tuple(df.loc[i, [spec_col, name_col, wafer_col]])
-        for i in replaced_rows
+        tuple(x) for x in df.loc[df["_被替换"], [spec_col, name_col, wafer_col]].values
     )
 
     if verbose:
         st.success(f"✅ 替代并合并成功的主键数: {len(matched_keys)}")
 
-    return df_grouped, matched_keys
+    return df_merged, matched_keys
