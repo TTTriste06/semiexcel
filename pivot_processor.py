@@ -138,7 +138,7 @@ class PivotProcessor:
                     forecast_df = forecast_df[1:].reset_index(drop=True)
                     forecast_df, keys_main = apply_mapping_and_merge(forecast_df, mapping_df, FIELD_MAPPINGS["赛卓-预测"])
                     forecast_df, keys_sub = apply_extended_substitute_mapping(forecast_df, mapping_df, FIELD_MAPPINGS["赛卓-预测"], keys_main)
-                    forecast_df = merge_duplicate_rows_by_key(forecast_df, field_map)
+                    forecast_df = merge_duplicate_rows_by_key(forecast_df, FIELD_MAPPINGS["赛卓-预测"])
                     # all_mapped_keys.update(keys_main)
                     # all_mapped_keys.update(keys_sub)
                     summary_preview, unmatched_forecast = append_forecast_to_summary(summary_preview, forecast_df)
