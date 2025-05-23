@@ -1,4 +1,5 @@
 import pandas as pd
+import streamlit as st
 
 def apply_mapping_and_merge(df, mapping_df, field_map, verbose=True):
     spec_col = field_map["规格"]
@@ -71,14 +72,15 @@ def apply_extended_substitute_mapping(df, mapping_df, field_map, already_mapped_
     if already_mapped_keys is None:
         already_mapped_keys = set()
 
-    # 标准化替代字段 + 记录替代组
     substitute_cols = []
     for i in range(1, 5):
         for col in [f"替代规格{i}", f"替代品名{i}", f"替代晶圆{i}"]:
-            mapping_df[col] = mapping_df.get(col, "").astype(str).str.strip()
+            if col not in mapping_df.columns:
+                mapping_df[col] = pd.Series([""] * len(mapping_df))  # 保证是 Series，避免 'str' object has no attribute 'astype'
+            mapping_df[col] = mapping_df[col].astype(str).str.strip()
         substitute_cols.append((f"替代规格{i}", f"替代品名{i}", f"替代晶圆{i}"))
 
-    # ✅ 打印每行替代组合
+    # ✅ 打印替代组信息
     if verbose:
         st.write("📋 所有替代组：")
         for idx, row in mapping_df.iterrows():
@@ -144,6 +146,6 @@ def apply_extended_substitute_mapping(df, mapping_df, field_map, already_mapped_
     df.drop(columns=["_由替代料号映射"], inplace=True)
 
     if verbose:
-        st.success(f"✅ 替代料号替换成功数: {len(matched_keys)}")
+        st.success(f"✅ 替代料号成功替换数: {len(matched_keys)}")
 
     return df_grouped, matched_keys
