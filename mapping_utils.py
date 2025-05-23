@@ -1,6 +1,7 @@
 import pandas as pd
 import streamlit as st
 
+
 def apply_mapping_and_merge(df, mapping_df, field_map, verbose=True):
     spec_col = field_map["规格"]
     name_col = field_map["品名"]
@@ -61,7 +62,9 @@ def apply_mapping_and_merge(df, mapping_df, field_map, verbose=True):
         print(f"❌ 替换失败: {e}")
         return df, set()
 
-def apply_extended_substitute_mapping(df, mapping_df, field_map, already_mapped_keys=None, verbose=True):
+# 我们重新写一下apply_extended_substitute_mapping，首先找到K-V列不为空的所有行，只用保留新规格，新品名，新晶圆品名，和四组替代料号（替代规格, 替代品名, 替代晶圆），
+# 如果这组替代料号不为空，就在需要合并的sheet中找到对应信息的行，替换替代规格, 替代品名, 替代晶圆为新规格，新品名，新晶圆品名，并与之前的新规格，新品名，新晶圆品名行合并
+def apply_extended_substitute_mapping(df, mapping_df, field_map, verbose=True):
     spec_col = field_map["规格"]
     name_col = field_map["品名"]
     wafer_col = field_map["晶圆品名"]
@@ -69,83 +72,79 @@ def apply_extended_substitute_mapping(df, mapping_df, field_map, already_mapped_
     for col in [spec_col, name_col, wafer_col]:
         df[col] = df[col].astype(str).str.strip()
 
-    if already_mapped_keys is None:
-        already_mapped_keys = set()
+    # 创建替代映射表：每条记录包括 替代规格, 替代品名, 替代晶圆, 新规格, 新品名, 新晶圆
+    substitute_records = []
 
-    substitute_cols = []
     for i in range(1, 5):
-        for col in [f"替代规格{i}", f"替代品名{i}", f"替代晶圆{i}"]:
+        sub_spec = f"替代规格{i}"
+        sub_name = f"替代品名{i}"
+        sub_wafer = f"替代晶圆{i}"
+
+        for col in [sub_spec, sub_name, sub_wafer, "新规格", "新品名", "新晶圆品名"]:
             if col not in mapping_df.columns:
-                mapping_df[col] = pd.Series([""] * len(mapping_df))  # 保证是 Series，避免 'str' object has no attribute 'astype'
-            mapping_df[col] = mapping_df[col].astype(str).str.strip()
-        substitute_cols.append((f"替代规格{i}", f"替代品名{i}", f"替代晶圆{i}"))
+                mapping_df[col] = ""
 
-    # ✅ 打印替代组信息
-    if verbose:
-        st.write("📋 所有替代组：")
-        for idx, row in mapping_df.iterrows():
-            for a, b, c in substitute_cols:
-                st.write(f"组 {a[-1]}: ({row[a]}, {row[b]}, {row[c]})")
+        filtered = mapping_df[
+            mapping_df[[sub_spec, sub_name, sub_wafer, "新规格", "新品名", "新晶圆品名"]].notna().all(axis=1)
+        ].copy()
 
-    matched_flags = []
-    new_specs = []
-    new_names = []
-    new_wafers = []
+        filtered[sub_spec] = filtered[sub_spec].astype(str).str.strip()
+        filtered[sub_name] = filtered[sub_name].astype(str).str.strip()
+        filtered[sub_wafer] = filtered[sub_wafer].astype(str).str.strip()
+        filtered["新规格"] = filtered["新规格"].astype(str).str.strip()
+        filtered["新品名"] = filtered["新品名"].astype(str).str.strip()
+        filtered["新晶圆品名"] = filtered["新晶圆品名"].astype(str).str.strip()
 
-    for idx, row in df.iterrows():
-        original_key = (row[spec_col], row[name_col], row[wafer_col])
-        if original_key in already_mapped_keys:
-            matched_flags.append(False)
-            new_specs.append(row[spec_col])
-            new_names.append(row[name_col])
-            new_wafers.append(row[wafer_col])
-            continue
+        for _, row in filtered.iterrows():
+            substitute_records.append({
+                "旧规格": row[sub_spec],
+                "旧品名": row[sub_name],
+                "旧晶圆品名": row[sub_wafer],
+                "新规格": row["新规格"],
+                "新品名": row["新品名"],
+                "新晶圆品名": row["新晶圆品名"]
+            })
 
-        found = False
-        for _, map_row in mapping_df.iterrows():
-            for a, b, c in substitute_cols:
-                sub_key = (map_row[a], map_row[b], map_row[c])
-                if verbose:
-                    st.write(f"🧪 尝试匹配: 当前行 {original_key} <-> 替代组: {sub_key}")
-                if original_key == sub_key:
-                    new_specs.append(map_row["新规格"])
-                    new_names.append(map_row["新品名"])
-                    new_wafers.append(map_row["新晶圆品名"])
-                    matched_flags.append(True)
-                    found = True
-                    break
-            if found:
-                break
-        if not found:
-            new_specs.append(row[spec_col])
-            new_names.append(row[name_col])
-            new_wafers.append(row[wafer_col])
-            matched_flags.append(False)
+    # ✅ 执行替代匹配
+    df["_已替代"] = False
+    matched_keys = set()
 
-    df["_由替代料号映射"] = matched_flags
-    df[spec_col] = new_specs
-    df[name_col] = new_names
-    df[wafer_col] = new_wafers
+    for sub in substitute_records:
+        mask = (
+            (df[spec_col] == sub["旧规格"]) &
+            (df[name_col] == sub["旧品名"]) &
+            (df[wafer_col] == sub["旧晶圆品名"])
+        )
 
+        if mask.any():
+            if verbose:
+                st.write(f"🔁 替换: ({sub['旧规格']}, {sub['旧品名']}, {sub['旧晶圆品名']}) -> ({sub['新规格']}, {sub['新品名']}, {sub['新晶圆品名']})，替换行数: {mask.sum()}")
+
+            df.loc[mask, spec_col] = sub["新规格"]
+            df.loc[mask, name_col] = sub["新品名"]
+            df.loc[mask, wafer_col] = sub["新晶圆品名"]
+            df.loc[mask, "_已替代"] = True
+
+            matched_keys.update(
+                tuple(x) for x in df.loc[mask, [spec_col, name_col, wafer_col]].values
+            )
+
+    # ✅ 分组合并
     group_cols = [spec_col, name_col, wafer_col]
     numeric_cols = df.select_dtypes(include="number").columns.tolist()
     sum_cols = [col for col in numeric_cols if col not in group_cols]
 
     df_grouped = df.groupby(group_cols, as_index=False)[sum_cols].sum()
 
-    other_cols = [col for col in df.columns if col not in group_cols + sum_cols + ["_由替代料号映射"]]
+    other_cols = [col for col in df.columns if col not in group_cols + sum_cols + ["_已替代"]]
     if other_cols:
         df_first = df.groupby(group_cols, as_index=False)[other_cols].first()
         df_grouped = pd.merge(df_grouped, df_first, on=group_cols, how="left")
 
-    matched_keys = set(
-        tuple(df.loc[idx, [spec_col, name_col, wafer_col]].values)
-        for idx in df.index[df["_由替代料号映射"]]
-    )
-
-    df.drop(columns=["_由替代料号映射"], inplace=True)
+    df.drop(columns=["_已替代"], inplace=True, errors="ignore")
 
     if verbose:
         st.success(f"✅ 替代料号成功替换数: {len(matched_keys)}")
 
     return df_grouped, matched_keys
+
