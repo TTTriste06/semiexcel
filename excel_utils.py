@@ -150,6 +150,40 @@ def mark_keys_on_sheet(ws, key_set, key_cols=(1, 2, 3)):
         # else:
             # st.write(f"❌ 第 {row} 行未匹配: {display_key}")
 
+def merge_duplicate_product_names(summary_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    合并 '汇总' 表中重复的品名（按品名分组），选用第一行的 晶圆品名 和 规格，合并其数值列。
+    """
+    # 确保必要列存在
+    required_cols = ["晶圆品名", "规格", "品名"]
+    for col in required_cols:
+        if col not in summary_df.columns:
+            raise ValueError(f"缺少必要列：{col}")
+
+    # 识别数值列（排除主键列）
+    value_cols = [col for col in summary_df.columns if col not in required_cols]
+
+    # 分组合并数值列
+    grouped = summary_df.groupby("品名", sort=False)
+
+    merged_rows = []
+
+    for name, group in grouped:
+        if len(group) == 1:
+            merged_rows.append(group.iloc[0])
+        else:
+            # 取第一行的 晶圆品名 和 规格
+            base_row = group.iloc[0][required_cols].copy()
+            summed_values = group[value_cols].apply(pd.to_numeric, errors="coerce").fillna(0).sum()
+            merged_row = pd.concat([base_row, summed_values])
+            merged_rows.append(merged_row)
+
+    # 合并所有结果
+    merged_df = pd.DataFrame(merged_rows)
+
+    # 保证列顺序与原始一致
+    return merged_df[summary_df.columns]
+    
 
 def clean_key_fields(df, field_map):
     for col in [field_map["规格"], field_map["品名"], field_map["晶圆品名"]]:
