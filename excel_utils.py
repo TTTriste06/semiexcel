@@ -1,10 +1,12 @@
 import pandas as pd
 import streamlit as st
+import re
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment, Font
 from openpyxl.styles import PatternFill
 from openpyxl.worksheet.table import Table, TableStyleInfo
+
 
 def standardize(val):
     """
@@ -121,9 +123,6 @@ def mark_keys_on_sheet(ws, key_set, key_cols=(1, 2, 3)):
     - key_set: set of tuple，例如 {("晶圆品名", "规格", "品名"), ...}
     - key_cols: 表示主键所在的列号 (从1开始)，默认是 (1, 2, 3) 对应“晶圆品名”, “规格”, “品名”
     """
-    from openpyxl.styles import PatternFill
-    import re
-
     yellow_fill = PatternFill(start_color="FFFF99", end_color="FFFF99", fill_type="solid")
 
     def standardize(val):
