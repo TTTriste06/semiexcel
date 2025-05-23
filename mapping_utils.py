@@ -59,3 +59,47 @@ def apply_mapping_and_merge(df, mapping_df, field_map, verbose=True):
     except Exception as e:
         print(f"❌ 替换失败: {e}")
         return df, set()
+
+def apply_extended_substitute_mapping(df, mapping_df, field_map, already_mapped_keys=None, verbose=True):
+    spec_col = field_map["规格"]
+    name_col = field_map["品名"]
+    wafer_col = field_map["晶圆品名"]
+
+    if already_mapped_keys is None:
+        already_mapped_keys = set()
+
+    extended_cols = []
+    for i in range(1, 5):
+        for col in [f"替代规格{i}", f"替代品名{i}", f"替代晶圆{i}"]:
+            mapping_df[col] = mapping_df.get(col, "").astype(str).str.strip()
+        extended_cols.append((f"替代规格{i}", f"替代品名{i}", f"替代晶圆{i}"))
+
+    def try_substitute(row):
+        if (row[spec_col], row[name_col], row[wafer_col]) in already_mapped_keys:
+            return row  # 已映射，跳过
+
+        for _, map_row in mapping_df.iterrows():
+            for a, b, c in extended_cols:
+                if (row[spec_col], row[name_col], row[wafer_col]) == (map_row[a], map_row[b], map_row[c]):
+                    row[spec_col] = map_row["新规格"]
+                    row[name_col] = map_row["新品名"]
+                    row[wafer_col] = map_row["新晶圆品名"]
+                    row["_由替代料号映射"] = True
+                    return row
+        row["_由替代料号映射"] = False
+        return row
+
+    df[spec_col] = df[spec_col].astype(str).str.strip()
+    df[name_col] = df[name_col].astype(str).str.strip()
+    df[wafer_col] = df[wafer_col].astype(str).str.strip()
+
+    df = df.apply(try_substitute, axis=1)
+
+    matched_keys = set(
+        tuple(row) for row in df.loc[df["_由替代料号映射"], [spec_col, name_col, wafer_col]].itertuples(index=False, name=None)
+    )
+
+    df.drop(columns=["_由替代料号映射"], inplace=True)
+
+    return df, matched_keys
+
