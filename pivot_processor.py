@@ -16,7 +16,7 @@ from excel_utils import (
     mark_keys_on_sheet,
     merge_duplicate_product_names
 )
-from mapping_utils import apply_mapping_and_merge
+from mapping_utils import apply_mapping_and_merge, apply_extended_substitute_mapping
 from month_selector import process_history_columns
 from summary import (
     merge_safety_inventory,
@@ -70,11 +70,16 @@ class PivotProcessor:
                         mapping_df.columns = [
                             "旧规格", "旧品名", "旧晶圆品名",
                             "新规格", "新品名", "新晶圆品名",
-                            "封装厂", "PC", "半成品"
-                        ] + list(mapping_df.columns[9:])
+                            "封装厂", "PC", "半成品", "备注",
+                            "替代规格1", "替代品名1", "替代晶圆1", 
+                            "替代规格2", "替代品名2", "替代晶圆2", 
+                            "替代规格3", "替代品名3", "替代晶圆3",
+                            "替代规格4", "替代品名5", "替代晶圆6"
+                        ] + list(mapping_df.columns[22:])
                         st.success(f"✅ `{sheet_name}` 正在进行新旧料号替换...")
 
                         df, mapped_keys = apply_mapping_and_merge(df, mapping_df, FIELD_MAPPINGS[sheet_name])
+                        df_final, keys_sub = apply_extended_substitute_mapping(df, mapping_df, FIELD_MAPPINGS[sheet_name], None)
                         all_mapped_keys.update(mapped_keys)
 
                         if sheet_name == "赛卓-未交订单":
@@ -110,9 +115,14 @@ class PivotProcessor:
 
             try:
                 if "赛卓-安全库存" in additional_sheets:
-                    summary_preview, unmatched_safety = merge_safety_inventory(summary_preview, additional_sheets["赛卓-安全库存"])
+                    df_safety = additional_sheets["赛卓-安全库存"]
+                    df_safety, keys_main = apply_mapping_and_merge(df_safety, mapping_df, FIELD_MAPPINGS["赛卓-安全库存"])
+                    df_safety, keys_sub = apply_extended_substitute_mapping(df_safety, mapping_df, FIELD_MAPPINGS["赛卓-安全库存"], keys_main)
+                    # all_mapped_keys.update(keys_main)
+                    # all_mapped_keys.update(keys_sub)
+                    summary_preview, unmatched_safety = merge_safety_inventory(summary_preview, df_safety)
                     st.success("✅ 已合并安全库存")
-
+                    
                 summary_preview, unmatched_unfulfilled = append_unfulfilled_summary_columns(summary_preview, pivot_unfulfilled)
                 st.success("✅ 已合并未交订单")
 
@@ -120,6 +130,10 @@ class PivotProcessor:
                     forecast_df = additional_sheets["赛卓-预测"]
                     forecast_df.columns = forecast_df.iloc[0]
                     forecast_df = forecast_df[1:].reset_index(drop=True)
+                    forecast_df, keys_main = apply_mapping_and_merge(forecast_df, mapping_df, FIELD_MAPPINGS["赛卓-预测"])
+                    forecast_df, keys_sub = apply_extended_substitute_mapping(forecast_df, mapping_df, FIELD_MAPPINGS["赛卓-预测"], keys_main)
+                    # all_mapped_keys.update(keys_main)
+                    # all_mapped_keys.update(keys_sub)
                     summary_preview, unmatched_forecast = append_forecast_to_summary(summary_preview, forecast_df)
                     st.success("✅ 已合并预测数据")
 
