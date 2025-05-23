@@ -151,9 +151,6 @@ def mark_keys_on_sheet(ws, key_set, key_cols=(1, 2, 3)):
         # else:
             # st.write(f"❌ 第 {row} 行未匹配: {display_key}")
 
-import pandas as pd
-import streamlit as st
-
 def merge_duplicate_rows_by_key(df: pd.DataFrame, field_map: dict, verbose=True) -> pd.DataFrame:
     """
     合并 DataFrame 中 '规格' + '品名' + '晶圆品名' 相同的行，并调试输出重复行内容。
