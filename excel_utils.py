@@ -186,46 +186,6 @@ def merge_duplicate_product_names(summary_df: pd.DataFrame) -> pd.DataFrame:
     return merged_df[summary_df.columns]
 
 
-def merge_duplicate_rows_by_key(df, field_map, verbose=True):
-    """
-    根据 FIELD_MAPPINGS 中指定的主键列合并重复行：
-    - 数值列求和
-    - 非主键非数值列保留任意一行
-
-    参数:
-        df (pd.DataFrame): 待处理的表格
-        field_map (dict): 包含 '规格'、'品名'、'晶圆品名' 的字段映射（来自 FIELD_MAPPINGS[sheet_name]）
-        verbose (bool): 是否打印调试信息
-
-    返回:
-        pd.DataFrame: 合并后的 DataFrame
-    """
-    spec_col = field_map["规格"]
-    name_col = field_map["品名"]
-    wafer_col = field_map["晶圆品名"]
-
-    # 清洗主键字段
-    for col in [spec_col, name_col, wafer_col]:
-        df[col] = df[col].astype(str).str.strip().str.replace("\n", "").str.replace("\r", "")
-
-    group_cols = [spec_col, name_col, wafer_col]
-
-    # 数值列求和
-    numeric_cols = df.select_dtypes(include="number").columns.tolist()
-    sum_cols = [col for col in numeric_cols if col not in group_cols]
-    df_numeric = df.groupby(group_cols, as_index=False)[sum_cols].sum()
-
-    # 非数值列随机保留（first）
-    other_cols = [col for col in df.columns if col not in group_cols + sum_cols]
-    df_random = df.groupby(group_cols, as_index=False)[other_cols].first()
-
-    df_merged = pd.merge(df_numeric, df_random, on=group_cols, how="outer")
-
-    if verbose:
-        st.success(f"✅ 合并重复主键成功，合并后行数：{df_merged.shape[0]}")
-
-    return df_merged
-
 def clean_key_fields(df, field_map):
     for col in [field_map["规格"], field_map["品名"], field_map["晶圆品名"]]:
         df[col] = (
@@ -236,5 +196,46 @@ def clean_key_fields(df, field_map):
             .str.strip()
         )
     return df
+
+
+def merge_duplicate_rows_by_key(df: pd.DataFrame, field_map: dict) -> pd.DataFrame:
+    """
+    合并给定表格中 '规格' + '品名' + '晶圆品名' 相同的行：
+    - 数值列求和
+    - 非主键字段取第一行
+    - 主键字段来自 FIELD_MAPPINGS
+
+    参数:
+        df (pd.DataFrame): 待处理的表格
+        field_map (dict): 如 {'规格': '产品规格', '品名': '产品品名', '晶圆品名': '晶圆型号'}
+
+    返回:
+        pd.DataFrame: 合并后的表格
+    """
+    key_cols = [field_map["规格"], field_map["品名"], field_map["晶圆品名"]]
+
+    for col in key_cols:
+        if col not in df.columns:
+            raise ValueError(f"缺少必要列：{col}")
+
+    # 识别非主键的数值列
+    value_cols = [col for col in df.columns if col not in key_cols and pd.api.types.is_numeric_dtype(df[col])]
+
+    grouped = df.groupby(key_cols, sort=False)
+    merged_rows = []
+
+    for keys, group in grouped:
+        if len(group) == 1:
+            merged_rows.append(group.iloc[0])
+        else:
+            base_row = group.iloc[0][df.columns.difference(value_cols)].copy()
+            summed_values = group[value_cols].apply(pd.to_numeric, errors="coerce").fillna(0).sum()
+            merged_row = pd.concat([base_row, summed_values])
+            merged_rows.append(merged_row)
+
+    merged_df = pd.DataFrame(merged_rows)
+
+    # 恢复列顺序
+    return merged_df[df.columns]
 
 
