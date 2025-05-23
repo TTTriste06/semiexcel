@@ -185,3 +185,45 @@ def merge_duplicate_product_names(summary_df: pd.DataFrame) -> pd.DataFrame:
     # 保证列顺序与原始一致
     return merged_df[summary_df.columns]
 
+
+def merge_duplicate_rows_by_key(df, field_map, verbose=True):
+    """
+    根据 FIELD_MAPPINGS 中指定的主键列合并重复行：
+    - 数值列求和
+    - 非主键非数值列保留任意一行
+
+    参数:
+        df (pd.DataFrame): 待处理的表格
+        field_map (dict): 包含 '规格'、'品名'、'晶圆品名' 的字段映射（来自 FIELD_MAPPINGS[sheet_name]）
+        verbose (bool): 是否打印调试信息
+
+    返回:
+        pd.DataFrame: 合并后的 DataFrame
+    """
+    spec_col = field_map["规格"]
+    name_col = field_map["品名"]
+    wafer_col = field_map["晶圆品名"]
+
+    # 清洗主键字段
+    for col in [spec_col, name_col, wafer_col]:
+        df[col] = df[col].astype(str).str.strip().str.replace("\n", "").str.replace("\r", "")
+
+    group_cols = [spec_col, name_col, wafer_col]
+
+    # 数值列求和
+    numeric_cols = df.select_dtypes(include="number").columns.tolist()
+    sum_cols = [col for col in numeric_cols if col not in group_cols]
+    df_numeric = df.groupby(group_cols, as_index=False)[sum_cols].sum()
+
+    # 非数值列随机保留（first）
+    other_cols = [col for col in df.columns if col not in group_cols + sum_cols]
+    df_random = df.groupby(group_cols, as_index=False)[other_cols].first()
+
+    df_merged = pd.merge(df_numeric, df_random, on=group_cols, how="outer")
+
+    if verbose:
+        st.success(f"✅ 合并重复主键成功，合并后行数：{df_merged.shape[0]}")
+
+    return df_merged
+
+
