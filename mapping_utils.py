@@ -64,15 +64,19 @@ def apply_mapping_and_merge(df, mapping_df, field_map, verbose=True):
 
 # 我们重新写一下apply_extended_substitute_mapping，首先找到K-V列不为空的所有行，只用保留新规格，新品名，新晶圆品名，和四组替代料号（替代规格, 替代品名, 替代晶圆），
 # 如果这组替代料号不为空，就在需要合并的sheet中找到对应信息的行，替换替代规格, 替代品名, 替代晶圆为新规格，新品名，新晶圆品名，并与之前的新规格，新品名，新晶圆品名行合并
+import pandas as pd
+import streamlit as st
+
 def apply_extended_substitute_mapping(df, mapping_df, field_map, verbose=True):
     spec_col = field_map["规格"]
     name_col = field_map["品名"]
     wafer_col = field_map["晶圆品名"]
 
+    # 清洗 df 字段
     for col in [spec_col, name_col, wafer_col]:
-        df[col] = df[col].astype(str).str.strip()
+        df[col] = df[col].astype(str).str.strip().str.replace("\n", "").str.replace("\r", "")
 
-    # 创建替代映射表：每条记录包括 替代规格, 替代品名, 替代晶圆, 新规格, 新品名, 新晶圆
+    # 构建替代记录列表
     substitute_records = []
 
     for i in range(1, 5):
@@ -83,17 +87,11 @@ def apply_extended_substitute_mapping(df, mapping_df, field_map, verbose=True):
         for col in [sub_spec, sub_name, sub_wafer, "新规格", "新品名", "新晶圆品名"]:
             if col not in mapping_df.columns:
                 mapping_df[col] = ""
+            mapping_df[col] = mapping_df[col].astype(str).str.strip().str.replace("\n", "").str.replace("\r", "")
 
         filtered = mapping_df[
             mapping_df[[sub_spec, sub_name, sub_wafer, "新规格", "新品名", "新晶圆品名"]].notna().all(axis=1)
-        ].copy()
-
-        filtered[sub_spec] = filtered[sub_spec].astype(str).str.strip()
-        filtered[sub_name] = filtered[sub_name].astype(str).str.strip()
-        filtered[sub_wafer] = filtered[sub_wafer].astype(str).str.strip()
-        filtered["新规格"] = filtered["新规格"].astype(str).str.strip()
-        filtered["新品名"] = filtered["新品名"].astype(str).str.strip()
-        filtered["新晶圆品名"] = filtered["新晶圆品名"].astype(str).str.strip()
+        ]
 
         for _, row in filtered.iterrows():
             substitute_records.append({
@@ -105,7 +103,7 @@ def apply_extended_substitute_mapping(df, mapping_df, field_map, verbose=True):
                 "新晶圆品名": row["新晶圆品名"]
             })
 
-    # ✅ 执行替代匹配
+    # 替换匹配
     df["_已替代"] = False
     matched_keys = set()
 
@@ -118,7 +116,10 @@ def apply_extended_substitute_mapping(df, mapping_df, field_map, verbose=True):
 
         if mask.any():
             if verbose:
-                st.write(f"🔁 替换: ({sub['旧规格']}, {sub['旧品名']}, {sub['旧晶圆品名']}) -> ({sub['新规格']}, {sub['新品名']}, {sub['新晶圆品名']})，替换行数: {mask.sum()}")
+                st.write(
+                    f"🔁 替换: ({sub['旧规格']}, {sub['旧品名']}, {sub['旧晶圆品名']}) "
+                    f"→ ({sub['新规格']}, {sub['新品名']}, {sub['新晶圆品名']})，替换行数: {mask.sum()}"
+                )
 
             df.loc[mask, spec_col] = sub["新规格"]
             df.loc[mask, name_col] = sub["新品名"]
@@ -129,7 +130,11 @@ def apply_extended_substitute_mapping(df, mapping_df, field_map, verbose=True):
                 tuple(x) for x in df.loc[mask, [spec_col, name_col, wafer_col]].values
             )
 
-    # ✅ 分组合并
+    # ✅ 再次清洗以确保分组合并正确
+    for col in [spec_col, name_col, wafer_col]:
+        df[col] = df[col].astype(str).str.strip().str.replace("\n", "").str.replace("\r", "")
+
+    # ✅ 分组聚合
     group_cols = [spec_col, name_col, wafer_col]
     numeric_cols = df.select_dtypes(include="number").columns.tolist()
     sum_cols = [col for col in numeric_cols if col not in group_cols]
@@ -144,7 +149,6 @@ def apply_extended_substitute_mapping(df, mapping_df, field_map, verbose=True):
     df.drop(columns=["_已替代"], inplace=True, errors="ignore")
 
     if verbose:
-        st.success(f"✅ 替代料号成功替换数: {len(matched_keys)}")
+        st.success(f"✅ 替代料号替换成功数: {len(matched_keys)}")
 
     return df_grouped, matched_keys
-
