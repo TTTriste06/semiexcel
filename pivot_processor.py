@@ -78,6 +78,7 @@ class PivotProcessor:
                         ] + list(mapping_df.columns[22:])
                         st.success(f"✅ `{sheet_name}` 正在进行新旧料号替换...")
 
+                        st.write(mapping_df)
                         df, mapped_keys = apply_mapping_and_merge(df, mapping_df, FIELD_MAPPINGS[sheet_name])
                         df_final, keys_sub = apply_extended_substitute_mapping(df, mapping_df, FIELD_MAPPINGS[sheet_name], None)
                         all_mapped_keys.update(mapped_keys)
