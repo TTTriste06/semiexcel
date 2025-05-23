@@ -68,38 +68,49 @@ def apply_extended_substitute_mapping(df, mapping_df, field_map, already_mapped_
     if already_mapped_keys is None:
         already_mapped_keys = set()
 
+    # 标准化字段
+    df[spec_col] = df[spec_col].astype(str).str.strip()
+    df[name_col] = df[name_col].astype(str).str.strip()
+    df[wafer_col] = df[wafer_col].astype(str).str.strip()
+
+    # 标准化替代列
     extended_cols = []
     for i in range(1, 5):
         for col in [f"替代规格{i}", f"替代品名{i}", f"替代晶圆{i}"]:
             mapping_df[col] = mapping_df.get(col, "").astype(str).str.strip()
         extended_cols.append((f"替代规格{i}", f"替代品名{i}", f"替代晶圆{i}"))
 
-    def try_substitute(row):
-        if (row[spec_col], row[name_col], row[wafer_col]) in already_mapped_keys:
-            return row  # 已映射，跳过
+    matched_keys = set()
 
-        for _, map_row in mapping_df.iterrows():
+    def try_substitute(row):
+        original_key = (row[spec_col], row[name_col], row[wafer_col])
+        if original_key in already_mapped_keys:
+            return row  # 跳过已替换行
+
+        for idx, map_row in mapping_df.iterrows():
             for a, b, c in extended_cols:
-                if (row[spec_col], row[name_col], row[wafer_col]) == (map_row[a], map_row[b], map_row[c]):
+                sub_key = (map_row[a], map_row[b], map_row[c])
+                
+                # ✅ 打印每一组替代键值（用于调试）
+                if verbose:
+                    st.write(f"🧪 尝试替代组: {sub_key} vs 当前行: {original_key}")
+
+                if original_key == sub_key:
                     row[spec_col] = map_row["新规格"]
                     row[name_col] = map_row["新品名"]
                     row[wafer_col] = map_row["新晶圆品名"]
+                    matched_keys.add((row[spec_col], row[name_col], row[wafer_col]))
                     row["_由替代料号映射"] = True
                     return row
+
         row["_由替代料号映射"] = False
         return row
 
-    df[spec_col] = df[spec_col].astype(str).str.strip()
-    df[name_col] = df[name_col].astype(str).str.strip()
-    df[wafer_col] = df[wafer_col].astype(str).str.strip()
-
     df = df.apply(try_substitute, axis=1)
-
-    matched_keys = set(
-        tuple(row) for row in df.loc[df["_由替代料号映射"], [spec_col, name_col, wafer_col]].itertuples(index=False, name=None)
-    )
 
     df.drop(columns=["_由替代料号映射"], inplace=True)
 
-    return df, matched_keys
+    if verbose:
+        st.success(f"🔁 替代匹配成功数: {len(matched_keys)}")
 
+    return df, matched_keys
