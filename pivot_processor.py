@@ -11,8 +11,12 @@ from config import CONFIG
 from excel_utils import (
     adjust_column_width,
     clean_df,
-    merge_header_for_summary,
-    mark_unmatched_keys_on_sheet
+    merge_header_for_summary, 
+    mark_unmatched_keys_on_sheet,
+    mark_keys_on_sheet,
+    merge_duplicate_product_names,
+    merge_duplicate_rows_by_key,
+    clean_key_fields
 )
 from mapping_utils import apply_mapping_and_merge, apply_extended_substitute_mapping
 from month_selector import process_history_columns
