@@ -81,7 +81,8 @@ class PivotProcessor:
 
                         st.write(mapping_df)
                         df, mapped_keys = apply_mapping_and_merge(df, mapping_df, FIELD_MAPPINGS[sheet_name])
-                        df_final, keys_sub = apply_extended_substitute_mapping(df, mapping_df, FIELD_MAPPINGS[sheet_name], None)
+                        df, keys_sub = apply_extended_substitute_mapping(df, mapping_df, FIELD_MAPPINGS[sheet_name], None)
+                        df = merge_duplicate_rows_by_key(df, FIELD_MAPPINGS[sheet_name])
                         all_mapped_keys.update(mapped_keys)
 
                         if sheet_name == "赛卓-未交订单":
@@ -120,6 +121,7 @@ class PivotProcessor:
                     df_safety = additional_sheets["赛卓-安全库存"]
                     df_safety, keys_main = apply_mapping_and_merge(df_safety, mapping_df, FIELD_MAPPINGS["赛卓-安全库存"])
                     df_safety, keys_sub = apply_extended_substitute_mapping(df_safety, mapping_df, FIELD_MAPPINGS["赛卓-安全库存"], keys_main)
+                    df_safety = merge_duplicate_rows_by_key(df_safety, FIELD_MAPPINGS["赛卓-安全库存"])
                     # all_mapped_keys.update(keys_main)
                     # all_mapped_keys.update(keys_sub)
                     summary_preview, unmatched_safety = merge_safety_inventory(summary_preview, df_safety)
@@ -134,6 +136,7 @@ class PivotProcessor:
                     forecast_df = forecast_df[1:].reset_index(drop=True)
                     forecast_df, keys_main = apply_mapping_and_merge(forecast_df, mapping_df, FIELD_MAPPINGS["赛卓-预测"])
                     forecast_df, keys_sub = apply_extended_substitute_mapping(forecast_df, mapping_df, FIELD_MAPPINGS["赛卓-预测"], keys_main)
+                    forecast_df = merge_duplicate_rows_by_key(forecast_df, field_map)
                     # all_mapped_keys.update(keys_main)
                     # all_mapped_keys.update(keys_sub)
                     summary_preview, unmatched_forecast = append_forecast_to_summary(summary_preview, forecast_df)
