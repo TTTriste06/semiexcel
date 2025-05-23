@@ -226,4 +226,15 @@ def merge_duplicate_rows_by_key(df, field_map, verbose=True):
 
     return df_merged
 
+def clean_key_fields(df, field_map):
+    for col in [field_map["规格"], field_map["品名"], field_map["晶圆品名"]]:
+        df[col] = (
+            df[col]
+            .astype(str)
+            .str.replace(r"\s+", "", regex=True)  # 移除所有空白字符（含空格、全角空格、Tab、换行）
+            .str.replace(r"[\u200b\u200e\u200f]", "", regex=True)  # 清除不可见字符
+            .str.strip()
+        )
+    return df
+
 
