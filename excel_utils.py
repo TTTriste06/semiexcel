@@ -151,39 +151,66 @@ def mark_keys_on_sheet(ws, key_set, key_cols=(1, 2, 3)):
         # else:
             # st.write(f"❌ 第 {row} 行未匹配: {display_key}")
 
-def merge_duplicate_product_names(summary_df: pd.DataFrame) -> pd.DataFrame:
+import pandas as pd
+import streamlit as st
+
+def merge_duplicate_rows_by_key(df: pd.DataFrame, field_map: dict, verbose=True) -> pd.DataFrame:
     """
-    合并 '汇总' 表中重复的品名（按品名分组），选用第一行的 晶圆品名 和 规格，合并其数值列。
+    合并 DataFrame 中 '规格' + '品名' + '晶圆品名' 相同的行，并调试输出重复行内容。
+    - 主键：来自 field_map 中的实际列名
+    - 数值列求和
+    - 其他列取第一行
+    - 返回合并后的 DataFrame（列顺序不变）
     """
-    # 确保必要列存在
-    required_cols = ["晶圆品名", "规格", "品名"]
-    for col in required_cols:
-        if col not in summary_df.columns:
+    key_cols = [field_map["规格"], field_map["品名"], field_map["晶圆品名"]]
+
+    for col in key_cols:
+        if col not in df.columns:
             raise ValueError(f"缺少必要列：{col}")
 
-    # 识别数值列（排除主键列）
-    value_cols = [col for col in summary_df.columns if col not in required_cols]
+    # 清洗主键字段
+    for col in key_cols:
+        df[col] = (
+            df[col]
+            .astype(str)
+            .str.strip()
+            .str.replace(r"\s+", "", regex=True)
+            .str.replace(r"[\n\r\u200b\u200e\u200f]", "", regex=True)
+        )
 
-    # 分组合并数值列
-    grouped = summary_df.groupby("品名", sort=False)
+    # 寻找重复组合
+    dup_keys = df.groupby(key_cols).size().reset_index(name="count")
+    dup_keys = dup_keys[dup_keys["count"] > 1]
 
+    if not dup_keys.empty and verbose:
+        st.warning(f"⚠️ 检测到 {len(dup_keys)} 个重复主键组合，准备合并：")
+        for idx, row in dup_keys.iterrows():
+            key_values = tuple(row[col] for col in key_cols)
+            st.write(f"🔁 主键组：{key_values}")
+            dup_rows = df[
+                (df[key_cols[0]] == key_values[0]) &
+                (df[key_cols[1]] == key_values[1]) &
+                (df[key_cols[2]] == key_values[2])
+            ]
+            st.dataframe(dup_rows)
+
+    # 数值列求和
+    value_cols = [col for col in df.columns if col not in key_cols and pd.api.types.is_numeric_dtype(df[col])]
+    grouped = df.groupby(key_cols, sort=False)
     merged_rows = []
 
-    for name, group in grouped:
+    for keys, group in grouped:
         if len(group) == 1:
             merged_rows.append(group.iloc[0])
         else:
-            # 取第一行的 晶圆品名 和 规格
-            base_row = group.iloc[0][required_cols].copy()
+            base_row = group.iloc[0][df.columns.difference(value_cols)].copy()
             summed_values = group[value_cols].apply(pd.to_numeric, errors="coerce").fillna(0).sum()
             merged_row = pd.concat([base_row, summed_values])
             merged_rows.append(merged_row)
 
-    # 合并所有结果
     merged_df = pd.DataFrame(merged_rows)
 
-    # 保证列顺序与原始一致
-    return merged_df[summary_df.columns]
+    return merged_df[df.columns]
 
 
 def clean_key_fields(df, field_map):
