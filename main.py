@@ -28,6 +28,8 @@ def main():
         additional_sheets = {}
 
         for name, file in github_files.items():
+            st.write(name)
+            sheet_name = "Sheet1" if "预测" in name else 0  # 根据文件名决定使用的 Sheet
             if file:
                 file_bytes = file.read()
                 file_io = BytesIO(file_bytes)
