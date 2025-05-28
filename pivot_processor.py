@@ -34,6 +34,7 @@ from summary import (
     merge_finished_inventory,
     append_product_in_progress
 )
+from append_summary import append_forecast_unmatched_to_summary_by_keys
 
 FIELD_MAPPINGS = {
     "赛卓-未交订单": {"规格": "规格", "品名": "品名", "晶圆品名": "晶圆品名"},
@@ -42,7 +43,7 @@ FIELD_MAPPINGS = {
     "赛卓-安全库存": {"规格": "OrderInformation", "品名": "ProductionNO.", "晶圆品名": "WaferID"},
     "赛卓-预测": {"品名": "生产料号"}
 }
-from append_summary import append_forecast_unmatched_to_summary_by_keys
+
 
 class PivotProcessor:
     def process(self, uploaded_files: dict, output_buffer, additional_sheets: dict = None):
@@ -61,19 +62,24 @@ class PivotProcessor:
         key_in_progress = []
 
         mapping_df = additional_sheets.get("赛卓-新旧料号", pd.DataFrame())
-        mapping_df = clean_df(mapping_df)
         
         
         all_mapped_keys = set()
+
+        # 清洗 additional_sheets 中的所有 nan 字符串
+        for name in ["赛卓-预测", "赛卓-安全库存", "赛卓-新旧料号"]:
+            if name in additional_sheets:
+                df = additional_sheets[name]
+                df = df.fillna("")  # 替换真正的 NaN
+                df = df.applymap(lambda x: "" if str(x).strip().lower() == "nan" else str(x).strip() if isinstance(x, str) else x)
+                additional_sheets[name] = df  # 更新为清洗后的 df
 
         # 在 PivotProcessor.process 内部，写 Excel 之前：
         # 检查是否有表含有字符串 "nan"
         for name, df in additional_sheets.items():
             if (df.astype(str).applymap(lambda x: x.lower() == "nan")).any().any():
                 st.warning(f"⚠️ 表 `{name}` 中含有字符串 'nan'，请确认是否清洗干净")
-        
-        with pd.ExcelWriter(output_buffer, engine="openpyxl") as writer:
-            ...
+
 
 
         with pd.ExcelWriter(output_buffer, engine="openpyxl") as writer:
