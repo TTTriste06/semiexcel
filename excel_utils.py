@@ -32,9 +32,10 @@ def standardize(val):
     return val
 
 def clean_df(df):
-    df = df.fillna("")  # 将所有 NaN 替换为空字符串
-    df = df.applymap(lambda x: str(x).strip() if isinstance(x, str) else x)  # 去除字符串中的前后空格
+    df = df.fillna("")  # 处理真正的 NaN/None
+    df = df.applymap(lambda x: "" if str(x).strip().lower() == "nan" else str(x).strip() if isinstance(x, str) else x)
     return df
+
 
 def clear_nan_cells(ws):
     """
