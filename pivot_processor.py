@@ -32,7 +32,7 @@ from summary import (
     merge_finished_inventory,
     append_product_in_progress
 )
-from append_summary import
+from append_summary import append_forecast_unmatched_to_summary_by_keys
 
 FIELD_MAPPINGS = {
     "赛卓-未交订单": {"规格": "规格", "品名": "品名", "晶圆品名": "晶圆品名"},
