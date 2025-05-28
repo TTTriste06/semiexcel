@@ -19,7 +19,8 @@ from excel_utils import (
     clean_key_fields,
     mark_unmatched_keys_on_name,
     reorder_summary_columns,
-    clear_nan_cells
+    clear_nan_cells,
+    get_column_index_by_name
 )
 from mapping_utils import (
     apply_mapping_and_merge, 
@@ -217,6 +218,7 @@ class PivotProcessor:
                 adjust_column_width(writer, key, df)
 
             try:
+                # 标红未匹配行
                 sheet_key_mapping = {
                     "赛卓-安全库存": unmatched_safety,
                     "赛卓-未交订单": unmatched_unfulfilled,
@@ -227,15 +229,17 @@ class PivotProcessor:
                 }
                 
                 for sheet_name, unmatched_keys in sheet_key_mapping.items():
-                    if sheet_name in writer.sheets:
+                    if sheet_name in writer.sheets and sheet_name in sheet_field_config:
                         ws = writer.sheets[sheet_name]
-                        col_idx = get_column_index_by_name(ws, "品名")
+                        config = sheet_field_config[sheet_name]
+                        field_name = config["field_name"]
+                        header_row = config["header_row"]
+                        col_idx = get_column_index_by_name(ws, field_name, header_row)
+                
                         if col_idx:
                             mark_unmatched_keys_on_name(ws, unmatched_keys, name_col=col_idx)
                         else:
-                            st.warning(f"⚠️ 无法在 `{sheet_name}` 中定位“品名”列，跳过标记")
-                
-                                
+                            st.warning(f"⚠️ `{sheet_name}` 中未找到字段 `{field_name}`，跳过未匹配标记")
 
 
                 """
