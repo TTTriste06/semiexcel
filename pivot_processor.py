@@ -123,7 +123,7 @@ class PivotProcessor:
                 return
 
             summary_preview = df_unfulfilled[["晶圆品名", "规格", "品名"]].drop_duplicates().reset_index(drop=True)
-
+                
             try:
                 if "赛卓-预测" in additional_sheets:
                     forecast_df = additional_sheets["赛卓-预测"]
@@ -141,11 +141,8 @@ class PivotProcessor:
                     # 添加未匹配的预测项
                     summary_preview, new_forecast_rows = append_forecast_unmatched_to_summary_by_keys(summary_preview, forecast_df)
                     st.success("✅ 已添加未匹配的预测项至汇总表")
-            except Exception as e:
-                st.error(f"❌ 汇总预测数据合并失败: {e}")
-                return
+
                 
-            try:
                 if "赛卓-安全库存" in additional_sheets:
                     df_safety = additional_sheets["赛卓-安全库存"]
                     df_safety, keys_main = apply_mapping_and_merge(df_safety, mapping_df, FIELD_MAPPINGS["赛卓-安全库存"])
