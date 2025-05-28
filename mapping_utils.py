@@ -66,44 +66,44 @@ def apply_mapping_and_merge(df, mapping_df, field_map, verbose=True):
 def apply_mapping_and_merge_forecast(df, mapping_df, field_map, verbose=True):
     name_col = field_map["品名"]
 
+    # 清洗字段
     df[name_col] = df[name_col].astype(str).str.strip()
     mapping_df["旧品名"] = mapping_df["旧品名"].astype(str).str.strip()
+    mapping_df["新品名"] = mapping_df["新品名"].astype(str).str.strip()
 
-    left_on = [name_col]
-    right_on = ["旧品名"]
-
+    # 合并（仅按品名）
     try:
-        df_merged = df.merge(mapping_df, how="left", left_on=left_on, right_on=right_on)
+        df_merged = df.merge(mapping_df[["旧品名", "新品名"]], how="left", left_on=[name_col], right_on=["旧品名"])
 
-        matched = df_merged["新品名"].notna()
-        unmatched_count = (~matched).sum()
+        # 成功替换的标志
+        mask_replace = df_merged["新品名"].notna() & (df_merged["新品名"].str.strip() != "")
 
-        # 生成布尔掩码：成功被新旧料号替换的行
-        mask_None = (
-            df_merged["新品名"].notna() & (df_merged["新品名"].astype(str).str.strip() != "")
-        )
+        if verbose:
+            st.write(f"✅ 替换成功行数: {mask_replace.sum()}")
+            st.write(f"⚠️ 未匹配行数: {(~mask_replace).sum()}")
 
-        df_merged["_由新旧料号映射"] = mask_None  # 标记列 ✅
+        df_merged["_由新旧料号映射"] = mask_replace
 
-        # 替换字段
-        df_merged.loc[mask_None, name_col] = df_merged.loc[mask_None, "新品名"]
+        # 替换品名
+        df_merged.loc[mask_replace, name_col] = df_merged.loc[mask_replace, "新品名"]
 
         # 删除中间列
-        drop_cols = ["旧品名", "新品名"]
-        df_cleaned = df_merged.drop(columns=[col for col in drop_cols if col in df_merged.columns])
+        df_cleaned = df_merged.drop(columns=[col for col in ["旧品名", "新品名"] if col in df_merged.columns])
 
+        # 聚合字段
         group_cols = [name_col]
         numeric_cols = df_cleaned.select_dtypes(include="number").columns.tolist()
         sum_cols = [col for col in numeric_cols if col not in group_cols]
 
         df_grouped = df_cleaned.groupby(group_cols, as_index=False)[sum_cols].sum()
 
+        # 保留其他非数值字段
         other_cols = [col for col in df_cleaned.columns if col not in group_cols + sum_cols]
         if other_cols:
             df_first = df_cleaned.groupby(group_cols, as_index=False)[other_cols].first()
             df_grouped = pd.merge(df_grouped, df_first, on=group_cols, how="left")
 
-        # ✅ 返回主键集合
+        # 返回映射键
         mapped_keys = set(
             tuple(df_merged.loc[idx, [name_col]].values)
             for idx in df_merged.index[df_merged["_由新旧料号映射"]]
@@ -112,8 +112,9 @@ def apply_mapping_and_merge_forecast(df, mapping_df, field_map, verbose=True):
         return df_grouped, mapped_keys
 
     except Exception as e:
-        print(f"❌ 替换失败: {e}")
+        st.error(f"❌ 替换失败: {e}")
         return df, set()
+
 
 
 # 我们重新写一下apply_extended_substitute_mapping，首先找到K-V列不为空的所有行，只用保留新规格，新品名，新晶圆品名，和四组替代料号（替代规格, 替代品名, 替代晶圆），
