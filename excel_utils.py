@@ -34,7 +34,11 @@ def clean_df(df):
     df = df.applymap(lambda x: str(x).strip() if isinstance(x, str) else x)  # 去除字符串中的前后空格
     return df
 
-
+def clear_nan_cells(ws):
+    for row in ws.iter_rows():
+        for cell in row:
+            if cell.value is not None and str(cell.value).strip().lower() == "nan":
+                cell.value = ""
 
 def adjust_column_width(writer, sheet_name, df):
     """
