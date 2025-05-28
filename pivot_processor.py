@@ -217,9 +217,17 @@ class PivotProcessor:
                 df.to_excel(writer, sheet_name=key, index=False)
                 adjust_column_width(writer, key, df)
 
-            try:
-                # 标红未匹配行
-                sheet_key_mapping = {
+            # 每个 sheet 中用于标记的字段名（目标列）及表头所在行（从 1 开始）
+            sheet_field_config = {
+                "赛卓-安全库存": {"field_name": "ProductionNO.", "header_row": 1},
+                "赛卓-未交订单": {"field_name": "品名", "header_row": 1},
+                "赛卓-预测": {"field_name": "生产料号", "header_row": 1},
+                "汇总": {"field_name": "品名", "header_row": 2},  # 汇总表通常从第2行起才是字段行
+                "赛卓-成品库存": {"field_name": "品名", "header_row": 1},
+                "赛卓-成品在制": {"field_name": "产品品名", "header_row": 1},
+            }
+
+            sheet_key_mapping = {
                     "赛卓-安全库存": unmatched_safety,
                     "赛卓-未交订单": unmatched_unfulfilled,
                     "赛卓-预测": unmatched_forecast,
@@ -228,6 +236,9 @@ class PivotProcessor:
                     "赛卓-成品在制": unmatched_in_progress,
                 }
                 
+
+            try:
+                # 标红未匹配行
                 for sheet_name, unmatched_keys in sheet_key_mapping.items():
                     if sheet_name in writer.sheets and sheet_name in sheet_field_config:
                         ws = writer.sheets[sheet_name]
