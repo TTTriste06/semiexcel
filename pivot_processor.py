@@ -147,7 +147,6 @@ class PivotProcessor:
                     # all_mapped_keys.update(keys_sub)
                     summary_preview, unmatched_forecast = append_forecast_to_summary(summary_preview, forecast_df)
                     st.success("✅ 已合并预测数据")
-                    st.write(unmatched_forecast)
 
                 if not df_finished.empty:
                     summary_preview, unmatched_finished = merge_finished_inventory(summary_preview, df_finished)
@@ -190,7 +189,7 @@ class PivotProcessor:
             try:
                 mark_unmatched_keys_on_sheet(writer.sheets["赛卓-安全库存"], unmatched_safety, wafer_col=1, spec_col=3, name_col=5)
                 mark_unmatched_keys_on_sheet(writer.sheets["赛卓-未交订单"], unmatched_unfulfilled, wafer_col=1, spec_col=2, name_col=3)
-                mark_unmatched_keys_on_sheet(writer.sheets["赛卓-预测"], unmatched_forecast, wafer_col=3, spec_col=1, name_col=2)
+                mark_unmatched_keys_on_sheet(writer.sheets["赛卓-预测"], unmatched_forecast, name_col=2)
                 writer.sheets["赛卓-预测"].delete_rows(2)
                 mark_unmatched_keys_on_sheet(writer.sheets["赛卓-成品库存"], unmatched_finished, wafer_col=1, spec_col=2, name_col=3)
                 mark_unmatched_keys_on_sheet(writer.sheets["赛卓-成品在制"], unmatched_in_progress, wafer_col=3, spec_col=4, name_col=5)
