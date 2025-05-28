@@ -268,10 +268,8 @@ class PivotProcessor:
 
 
             # ✅ 添加一个新的 Sheet：产品生产计划
+    
             try:
-                df_plan = pd.DataFrame(columns=["晶圆品名", "规格", "品名", "计划开始日期", "预计完成日期", "生产数量", "生产状态"])
-            
-                # 示例填充（可根据业务逻辑替换为实际计算逻辑）
                 if not summary_preview.empty:
                     df_plan = summary_preview[["晶圆品名", "规格", "品名"]].copy()
                     df_plan["计划开始日期"] = datetime.today().strftime("%Y-%m-%d")
@@ -279,19 +277,26 @@ class PivotProcessor:
                     df_plan["生产数量"] = 0
                     df_plan["生产状态"] = "待排产"
             
-                df_plan.to_excel(writer, sheet_name="产品生产计划", index=False)
-                adjust_column_width(writer, "产品生产计划", df_plan)
-                st.success("✅ 已添加新 Sheet：产品生产计划")
+                    # 写入空白第 1 行 + 数据从第 2 行开始（通过起始行设置 header=False 再手动写表头）
+                    sheet_name = "产品生产计划"
+                    df_empty_row = pd.DataFrame([[""] * len(df_plan.columns)], columns=df_plan.columns)
+                    df_with_blank_top = pd.concat([df_empty_row, df_plan], ignore_index=True)
+            
+                    df_with_blank_top.to_excel(writer, sheet_name=sheet_name, index=False, header=False)
+                    ws = writer.sheets[sheet_name]
+            
+                    # 手动写入表头到第 2 行
+                    for col_idx, col_name in enumerate(df_plan.columns, start=1):
+                        ws.cell(row=2, column=col_idx, value=col_name)
+            
+                    adjust_column_width(writer, sheet_name, df_plan)
+                    ws.auto_filter.ref = f"A2:{get_column_letter(ws.max_column)}2"
+            
+                    st.success("✅ 已添加新 Sheet：产品生产计划，表头位于第 2 行")
+            
             except Exception as e:
                 st.warning(f"⚠️ 创建产品生产计划 Sheet 失败：{e}")
 
-
-            for name, ws in writer.sheets.items():
-                col_letter = get_column_letter(ws.max_column)
-                if name == "汇总":
-                    ws.auto_filter.ref = f"A2:{col_letter}2"
-                else:
-                    ws.auto_filter.ref = f"A1:{col_letter}1"
 
 
         # ✅ 替换这些指定表的 nan 值为空
