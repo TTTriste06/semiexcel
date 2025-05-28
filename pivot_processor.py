@@ -147,6 +147,7 @@ class PivotProcessor:
                     # all_mapped_keys.update(keys_sub)
                     summary_preview, unmatched_forecast = append_forecast_to_summary(summary_preview, forecast_df)
                     st.success("✅ 已合并预测数据")
+                    st.write(unmatched_forecast)
 
                 if not df_finished.empty:
                     summary_preview, unmatched_finished = merge_finished_inventory(summary_preview, df_finished)
