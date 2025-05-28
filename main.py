@@ -28,11 +28,9 @@ def main():
         additional_sheets = {}
 
         for name, file in github_files.items():
-            st.write(name)
             sheet_name = 0
             if name == "赛卓-预测.xlsx":
                 sheet_name = "Sheet1"
-            st.write(sheet_name)
             if file:
                 file_bytes = file.read()
                 file_io = BytesIO(file_bytes)
@@ -50,7 +48,6 @@ def main():
                 except FileNotFoundError:
                     st.warning(f"⚠️ 未提供且未在 GitHub 找到历史文件：{name}")
 
-        st.write(additional_sheets)
         # 生成 Excel 汇总
         buffer = BytesIO()
         processor = PivotProcessor()
