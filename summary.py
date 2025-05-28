@@ -84,54 +84,56 @@ def append_unfulfilled_summary_columns(summary_df, pivoted_df):
 
 def append_forecast_to_summary(summary_df, forecast_df):
     """
-    从预测表中提取与 summary_df 匹配的预测记录（按品名匹配），
-    并将预测表中未出现在 summary_df 的品名也补充进去。
+    将预测表按“品名”合并进汇总表 summary_df。
+    同时将预测中未在汇总中的品名自动补入，并返回未匹配品名列表。
 
-    返回：
-    - 合并后的 summary_df
-    - unmatched_keys: list of 品名（在预测中但不在汇总中）
+    参数:
+    - summary_df: 汇总表，含“品名”列
+    - forecast_df: 预测表，含“生产料号”列和若干预测列
+
+    返回:
+    - merged_df: 合并后的 DataFrame
+    - unmatched_keys: list of str，预测中存在但汇总中没有的品名
     """
-
-    # 重命名对齐列名
-    forecast_df = forecast_df.rename(columns={
-        "生产料号": "品名"
-    })
-
-    key_col = ["品名"]
+    # 对齐列名
+    forecast_df = forecast_df.rename(columns={"生产料号": "品名"})
 
     # 提取预测列
+    key_col = ["品名"]
     month_cols = [col for col in forecast_df.columns if isinstance(col, str) and "预测" in col]
     if not month_cols:
         st.warning("⚠️ 没有识别到任何预测列，请检查列名是否包含'预测'")
         return summary_df, []
 
-    # 清洗 & 去重
-    forecast_df = forecast_df[key_col + month_cols].drop_duplicates(subset=key_col)
+    # 去除 NaN + 清洗空格
     forecast_df["品名"] = forecast_df["品名"].astype(str).str.strip()
     summary_df["品名"] = summary_df["品名"].astype(str).str.strip()
 
-    # 找出“预测中存在但汇总中没有”的品名
+    # 找出预测中独有的品名
     summary_keys = set(summary_df["品名"])
     forecast_keys = set(forecast_df["品名"])
     unmatched_keys = list(forecast_keys - summary_keys)
 
-    # 把 unmatched 的预测记录也补充进 summary
-    unmatched_rows = forecast_df[forecast_df["品名"].isin(unmatched_keys)]
-    unmatched_rows_full = unmatched_rows.copy()
+    # 取出预测中未出现在汇总中的行
+    unmatched_rows = forecast_df[forecast_df["品名"].isin(unmatched_keys)].copy()
+
+    # 构造一个完整结构的 DataFrame 作为新行
     for col in summary_df.columns:
-        if col not in unmatched_rows_full.columns:
-            unmatched_rows_full[col] = ""
+        if col not in unmatched_rows.columns:
+            unmatched_rows[col] = ""
 
-    # 保证列顺序一致
-    unmatched_rows_full = unmatched_rows_full[summary_df.columns.tolist()]
+    # 统一列顺序，确保 concat 后结构一致
+    unmatched_rows = unmatched_rows[summary_df.columns.tolist()]
 
-    # 合并到 summary 中
-    updated_summary = pd.concat([summary_df, unmatched_rows_full], ignore_index=True)
+    # 添加进汇总
+    summary_extended = pd.concat([summary_df, unmatched_rows], ignore_index=True)
 
-    # 然后再 merge 预测数据（将预测列补上）
-    merged = updated_summary.merge(forecast_df, on="品名", how="left")
+    # 再用预测列合并一次，补上预测值
+    forecast_only = forecast_df[key_col + month_cols]
+    merged = summary_extended.merge(forecast_only, on="品名", how="left")
 
     return merged, unmatched_keys
+
 
 
 def merge_finished_inventory(summary_df, finished_df):
