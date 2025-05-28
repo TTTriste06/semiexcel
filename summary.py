@@ -114,7 +114,9 @@ def append_forecast_to_summary(summary_df, forecast_df):
 
     # 查找未匹配的品名
     summary_keys = set(summary_df["品名"].dropna().astype(str).str.strip())
+    st.write(forecast_df["品名"])
     forecast_keys = forecast_df["品名"].dropna().astype(str).str.strip()
+    st.write(forecast_keys)
     unmatched_keys = [key for key in forecast_keys if key not in summary_keys]
 
     # 合并
