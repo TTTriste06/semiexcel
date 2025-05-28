@@ -154,12 +154,7 @@ class PivotProcessor:
                     # 添加未匹配的预测项
                     summary_preview, new_forecast_rows = append_forecast_unmatched_to_summary_by_keys(summary_preview, forecast_df)
                     st.success("✅ 已添加未匹配的预测项至汇总表")
-                    
-                    # 写入汇总Sheet之后，标记红色
-                    red_fill = PatternFill(start_color="FFFFC7CE", end_color="FFFFC7CE", fill_type="solid")
-                    for row in new_forecast_rows:
-                        for col in range(1, ws.max_column + 1):
-                            ws.cell(row=row, column=col).fill = red_fill
+
 
 
 
@@ -205,6 +200,7 @@ class PivotProcessor:
                 mark_unmatched_keys_on_sheet(writer.sheets["赛卓-安全库存"], unmatched_safety, wafer_col=1, spec_col=3, name_col=5)
                 mark_unmatched_keys_on_sheet(writer.sheets["赛卓-未交订单"], unmatched_unfulfilled, wafer_col=1, spec_col=2, name_col=3)
                 mark_unmatched_keys_on_forecast(writer.sheets["赛卓-预测"], unmatched_forecast, name_col=2)
+                mark_unmatched_keys_on_forecast(writer.sheets["汇总"], unmatched_forecast, name_col=3)
                 writer.sheets["赛卓-预测"].delete_rows(2)
                 mark_unmatched_keys_on_sheet(writer.sheets["赛卓-成品库存"], unmatched_finished, wafer_col=1, spec_col=2, name_col=3)
                 mark_unmatched_keys_on_sheet(writer.sheets["赛卓-成品在制"], unmatched_in_progress, wafer_col=3, spec_col=4, name_col=5)
