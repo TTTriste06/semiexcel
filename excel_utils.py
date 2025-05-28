@@ -277,3 +277,20 @@ def merge_duplicate_rows_by_key(df: pd.DataFrame, field_map: dict, verbose=True)
 
     # 保持列顺序一致
     return merged_df[df.columns]
+
+
+# 💡 自动按模块排序汇总列：安全库存 → 未交订单 → 预测 → 其他
+def reorder_summary_columns(df):
+    col_list = df.columns.tolist()
+
+    # 区分模块
+    safe_cols = [col for col in col_list if "Inv" in col]
+    unfulfilled_cols = [col for col in col_list if "未交订单" in col or col == "总未交订单"]
+    forecast_cols = [col for col in col_list if "预测" in col]
+    base_cols = ["晶圆品名", "规格", "品名"]
+    other_cols = [col for col in col_list if col not in base_cols + safe_cols + unfulfilled_cols + forecast_cols]
+
+    # 组合：基础列 + 安全库存 + 未交订单 + 预测 + 其他
+    new_order = base_cols + safe_cols + unfulfilled_cols + forecast_cols + other_cols
+    return df[new_order]
+
