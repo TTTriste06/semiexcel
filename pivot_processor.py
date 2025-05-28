@@ -32,6 +32,7 @@ from summary import (
     merge_finished_inventory,
     append_product_in_progress
 )
+from append_summary import
 
 FIELD_MAPPINGS = {
     "赛卓-未交订单": {"规格": "规格", "品名": "品名", "晶圆品名": "晶圆品名"},
@@ -150,6 +151,16 @@ class PivotProcessor:
                     st.success("✅ 已合并预测数据")
                     st.write(unmatched_forecast)
 
+                    if ws is not None and keys_main:
+                        append_forecast_unmatched_to_summary_by_keys(
+                            ws_summary=ws,
+                            ws_forecast=writer.sheets.get("赛卓-预测"),  # 获取预测工作表对象
+                            unmatched_names=unmatched_forecast,  # 使用真正未匹配品名
+                            name_col=2,  # 假设品名在第3列
+                            start_col_forecast=4  # 预测值从第4列开始
+                        )
+                        st.success("✅ 已将未匹配品名行追加至汇总 sheet")
+
                 if not df_finished.empty:
                     summary_preview, unmatched_finished = merge_finished_inventory(summary_preview, df_finished)
                     st.success("✅ 已合并成品库存")
@@ -196,6 +207,8 @@ class PivotProcessor:
                 mark_unmatched_keys_on_sheet(writer.sheets["赛卓-成品库存"], unmatched_finished, wafer_col=1, spec_col=2, name_col=3)
                 mark_unmatched_keys_on_sheet(writer.sheets["赛卓-成品在制"], unmatched_in_progress, wafer_col=3, spec_col=4, name_col=5)
                 writer.sheets["赛卓-新旧料号"].delete_rows(2)
+
+            
 
                 # mark_keys_on_sheet(writer.sheets["汇总"], all_mapped_keys, (2, 3, 1))
                 # mark_keys_on_sheet(writer.sheets["赛卓-安全库存"], all_mapped_keys, (3, 5, 1))
