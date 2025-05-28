@@ -29,7 +29,7 @@ def main():
 
         for name, file in github_files.items():
             st.write(name)
-            sheet_name = "Sheet1" if name == 赛卓-预测
+            sheet_name = "Sheet1" if name == "赛卓-预测"
             if file:
                 file_bytes = file.read()
                 file_io = BytesIO(file_bytes)
