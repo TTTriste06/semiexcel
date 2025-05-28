@@ -95,61 +95,46 @@ def append_unfulfilled_summary_columns(summary_df, pivoted_df):
     return merged, unmatched_keys
 
 
-
 def append_forecast_to_summary(summary_df, forecast_df):
     """
-    从预测表中提取与 summary_df 匹配的预测记录，并返回未匹配的主键列表。
+    从预测表中提取与 summary_df 匹配的预测记录（仅按品名匹配），并返回未匹配的品名列表。
 
     参数:
-    - summary_df: 汇总表（含主键）
+    - summary_df: 汇总表（含“品名”列）
     - forecast_df: 原始预测表
 
     返回:
     - merged: 合并后的 summary_df
-    - unmatched_keys: list of (晶圆品名, 规格, 品名) 未被匹配的主键
+    - unmatched_keys: list of 品名 未被匹配的条目
     """
 
-    # Debug: 显示原始预测表列
-    # st.write("原始预测表列名：", forecast_df.columns.tolist())
-
-    # 重命名主键列
+    # 重命名以统一列名
     forecast_df = forecast_df.rename(columns={
-        "产品型号": "规格",
-        "ProductionNO.": "品名"
+        "生产料号": "品名"
     })
 
-    # 主键列
-    key_cols = ["晶圆品名", "规格", "品名"]
+    # 使用的唯一主键
+    key_col = ["品名"]
 
-    # 找出预测月份列（如“5月预测”、“6月预测”...）
+    # 提取预测月份列
     month_cols = [col for col in forecast_df.columns if isinstance(col, str) and "预测" in col]
-    # st.write("识别到的预测列：", month_cols)
-
     if not month_cols:
         st.warning("⚠️ 没有识别到任何预测列，请检查列名是否包含'预测'")
         return summary_df, []
 
-    # 去重：每组主键保留第一行
-    forecast_df = forecast_df[key_cols + month_cols].drop_duplicates(subset=key_cols)
+    # 去重，保留每个品名第一条记录
+    forecast_df = forecast_df[key_col + month_cols].drop_duplicates(subset=key_col)
 
-    # 查找未匹配的主键
-    summary_keys = set(
-        tuple(str(x).strip() for x in row)
-        for row in summary_df[key_cols].dropna().values
-    )
-    unmatched_keys = []
-    for _, row in forecast_df.iterrows():
-        key = tuple(str(row[col]).strip() for col in key_cols)
-        if key not in summary_keys:
-            unmatched_keys.append(key)
+    # 查找未匹配的品名
+    summary_keys = set(summary_df["品名"].dropna().astype(str).str.strip())
+    forecast_keys = forecast_df["品名"].dropna().astype(str).str.strip()
+    unmatched_keys = [key for key in forecast_keys if key not in summary_keys]
 
-    # 合并进 summary
-    merged = summary_df.merge(forecast_df, on=key_cols, how="left")
-    # st.write("合并后的汇总示例：", merged.head(3))
+    # 合并
+    merged = summary_df.merge(forecast_df, on="品名", how="left")
 
     return merged, unmatched_keys
-
-
+    
 
 def merge_finished_inventory(summary_df, finished_df):
     """
