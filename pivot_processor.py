@@ -32,7 +32,6 @@ from summary import (
     merge_finished_inventory,
     append_product_in_progress
 )
-from append_summary import append_forecast_unmatched_to_summary_by_keys
 
 FIELD_MAPPINGS = {
     "赛卓-未交订单": {"规格": "规格", "品名": "品名", "晶圆品名": "晶圆品名"},
@@ -41,6 +40,7 @@ FIELD_MAPPINGS = {
     "赛卓-安全库存": {"规格": "OrderInformation", "品名": "ProductionNO.", "晶圆品名": "WaferID"},
     "赛卓-预测": {"品名": "生产料号"}
 }
+from append_summary import append_forecast_unmatched_to_summary_by_keys
 
 class PivotProcessor:
     def process(self, uploaded_files: dict, output_buffer, additional_sheets: dict = None):
@@ -150,16 +150,9 @@ class PivotProcessor:
                     summary_preview, unmatched_forecast = append_forecast_to_summary(summary_preview, forecast_df)
                     st.success("✅ 已合并预测数据")
                     st.write(unmatched_forecast)
+                    summary_preview = append_forecast_unmatched_to_summary_by_keys(summary_preview, forecast_df)
+                    st.success("✅ 已添加未匹配的预测项至汇总表")
 
-                    if ws is not None and keys_main:
-                        append_forecast_unmatched_to_summary_by_keys(
-                            ws_summary=ws,
-                            ws_forecast=writer.sheets.get("赛卓-预测"),  # 获取预测工作表对象
-                            unmatched_names=unmatched_forecast,  # 使用真正未匹配品名
-                            name_col=2,  # 假设品名在第3列
-                            start_col_forecast=4  # 预测值从第4列开始
-                        )
-                        st.success("✅ 已将未匹配品名行追加至汇总 sheet")
 
                 if not df_finished.empty:
                     summary_preview, unmatched_finished = merge_finished_inventory(summary_preview, df_finished)
