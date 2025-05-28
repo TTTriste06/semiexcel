@@ -31,20 +31,20 @@ def main():
             st.write(name)
             sheet_name = 0
             if name == "赛卓-预测.xlsx":
-                sheet_name = 2
+                sheet_name = "Sheet1"
             st.write(sheet_name)
             if file:
                 file_bytes = file.read()
                 file_io = BytesIO(file_bytes)
                 safe_name = quote(name)
                 upload_to_github(BytesIO(file_bytes), safe_name)
-                df = pd.read_excel(file_io)
+                df = pd.read_excel(file_io, sheet_name=sheet_name)
                 additional_sheets[name.replace(".xlsx", "")] = df
             else:
                 try:
                     safe_name = quote(name)
                     content = download_from_github(safe_name)
-                    df = pd.read_excel(BytesIO(content))
+                    df = pd.read_excel(BytesIO(content), sheet_name=sheet_name)
                     additional_sheets[name.replace(".xlsx", "")] = df
                     st.info(f"📂 使用了 GitHub 上存储的历史版本：{name}")
                 except FileNotFoundError:
