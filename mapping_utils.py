@@ -9,8 +9,9 @@ def apply_mapping_and_merge(df, mapping_df, field_map, verbose=True):
 
     for col in [spec_col, name_col, wafer_col]:
         df[col] = df[col].astype(str).str.strip()
-    for col in ["旧规格", "旧品名", "旧晶圆品名"]:
-        mapping_df[col] = mapping_df[col].astype(str).str.strip()
+    for col in ["旧规格", "旧品名", "旧晶圆品名", "新规格", "新品名", "新晶圆品名"]:
+        if col in mapping_df.columns:
+            mapping_df[col] = mapping_df[col].astype(str).str.strip()
 
     left_on = [spec_col, name_col, wafer_col]
     right_on = ["旧规格", "旧品名", "旧晶圆品名"]
@@ -18,39 +19,37 @@ def apply_mapping_and_merge(df, mapping_df, field_map, verbose=True):
     try:
         df_merged = df.merge(mapping_df, how="left", left_on=left_on, right_on=right_on)
 
-        matched = df_merged["新规格"].notna()
-        unmatched_count = (~matched).sum()
-
-        # 生成布尔掩码：成功被新旧料号替换的行
-        mask_None = (
-            df_merged["新规格"].notna() & (df_merged["新规格"].astype(str).str.strip() != "") &
-            df_merged["新品名"].notna() & (df_merged["新品名"].astype(str).str.strip() != "") &
-            df_merged["新晶圆品名"].notna() & (df_merged["新晶圆品名"].astype(str).str.strip() != "")
+        # 替换条件：新字段都非空 & 非 'nan'
+        mask_replace = (
+            df_merged["新规格"].notna() & df_merged["新规格"].str.strip().ne("") &
+            df_merged["新品名"].notna() & df_merged["新品名"].str.strip().ne("") &
+            df_merged["新晶圆品名"].notna() & df_merged["新晶圆品名"].str.strip().ne("")
         )
 
-        df_merged["_由新旧料号映射"] = mask_None  # 标记列 ✅
+        df_merged["_由新旧料号映射"] = mask_replace  # 标记哪些行被替换
 
         # 替换字段
-        df_merged.loc[mask_None, spec_col] = df_merged.loc[mask_None, "新规格"]
-        df_merged.loc[mask_None, name_col] = df_merged.loc[mask_None, "新品名"]
-        df_merged.loc[mask_None, wafer_col] = df_merged.loc[mask_None, "新晶圆品名"]
+        df_merged.loc[mask_replace, spec_col] = df_merged.loc[mask_replace, "新规格"]
+        df_merged.loc[mask_replace, name_col] = df_merged.loc[mask_replace, "新品名"]
+        df_merged.loc[mask_replace, wafer_col] = df_merged.loc[mask_replace, "新晶圆品名"]
 
-        # 删除中间列
+        # 清理中间列
         drop_cols = ["旧规格", "旧品名", "旧晶圆品名", "新规格", "新品名", "新晶圆品名"]
         df_cleaned = df_merged.drop(columns=[col for col in drop_cols if col in df_merged.columns])
 
+        # 聚合数值字段
         group_cols = [spec_col, name_col, wafer_col]
         numeric_cols = df_cleaned.select_dtypes(include="number").columns.tolist()
         sum_cols = [col for col in numeric_cols if col not in group_cols]
 
         df_grouped = df_cleaned.groupby(group_cols, as_index=False)[sum_cols].sum()
 
+        # 保留非数值字段
         other_cols = [col for col in df_cleaned.columns if col not in group_cols + sum_cols]
         if other_cols:
             df_first = df_cleaned.groupby(group_cols, as_index=False)[other_cols].first()
             df_grouped = pd.merge(df_grouped, df_first, on=group_cols, how="left")
 
-        # ✅ 返回主键集合
         mapped_keys = set(
             tuple(df_merged.loc[idx, [spec_col, name_col, wafer_col]].values)
             for idx in df_merged.index[df_merged["_由新旧料号映射"]]
@@ -66,44 +65,36 @@ def apply_mapping_and_merge(df, mapping_df, field_map, verbose=True):
 def apply_mapping_and_merge_forecast(df, mapping_df, field_map, verbose=True):
     name_col = field_map["品名"]
 
-    # 清洗字段
     df[name_col] = df[name_col].astype(str).str.strip()
     mapping_df["旧品名"] = mapping_df["旧品名"].astype(str).str.strip()
     mapping_df["新品名"] = mapping_df["新品名"].astype(str).str.strip()
 
-    # 合并（仅按品名）
     try:
         df_merged = df.merge(mapping_df[["旧品名", "新品名"]], how="left", left_on=[name_col], right_on=["旧品名"])
 
-        # 成功替换的标志
-        mask_replace = df_merged["新品名"].notna() & (df_merged["新品名"].str.strip() != "")
+        # 成功替换条件：新品名非空
+        mask_replace = df_merged["新品名"].notna() & df_merged["新品名"].str.strip().ne("")
 
         if verbose:
             st.write(f"✅ 替换成功行数: {mask_replace.sum()}")
             st.write(f"⚠️ 未匹配行数: {(~mask_replace).sum()}")
 
         df_merged["_由新旧料号映射"] = mask_replace
-
-        # 替换品名
         df_merged.loc[mask_replace, name_col] = df_merged.loc[mask_replace, "新品名"]
 
-        # 删除中间列
-        df_cleaned = df_merged.drop(columns=[col for col in ["旧品名", "新品名"] if col in df_merged.columns])
+        df_cleaned = df_merged.drop(columns=["旧品名", "新品名"])
 
-        # 聚合字段
         group_cols = [name_col]
         numeric_cols = df_cleaned.select_dtypes(include="number").columns.tolist()
         sum_cols = [col for col in numeric_cols if col not in group_cols]
 
         df_grouped = df_cleaned.groupby(group_cols, as_index=False)[sum_cols].sum()
 
-        # 保留其他非数值字段
         other_cols = [col for col in df_cleaned.columns if col not in group_cols + sum_cols]
         if other_cols:
             df_first = df_cleaned.groupby(group_cols, as_index=False)[other_cols].first()
             df_grouped = pd.merge(df_grouped, df_first, on=group_cols, how="left")
 
-        # 返回映射键
         mapped_keys = set(
             tuple(df_merged.loc[idx, [name_col]].values)
             for idx in df_merged.index[df_merged["_由新旧料号映射"]]
