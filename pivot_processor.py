@@ -61,6 +61,8 @@ class PivotProcessor:
         key_in_progress = []
 
         mapping_df = additional_sheets.get("赛卓-新旧料号", pd.DataFrame())
+        mapping_df = clean_df(mapping_df)
+        
         
         all_mapped_keys = set()
 
@@ -129,8 +131,7 @@ class PivotProcessor:
             try:
                 if "赛卓-预测" in additional_sheets:
                     forecast_df = additional_sheets["赛卓-预测"]
-                    #forecast_df.columns = forecast_df.iloc[0]
-                    #forecast_df = forecast_df[1:].reset_index(drop=True)
+                    forecast_df = clean_df(forecast_df)
                     forecast_df, keys_main = apply_mapping_and_merge_forecast(forecast_df, mapping_df, FIELD_MAPPINGS["赛卓-预测"])
                     ## forecast_df, keys_sub = apply_extended_substitute_mapping(forecast_df, mapping_df, FIELD_MAPPINGS["赛卓-预测"], keys_main)
                     # forecast_df = merge_duplicate_rows_by_key(forecast_df, FIELD_MAPPINGS["赛卓-预测"])
@@ -147,6 +148,7 @@ class PivotProcessor:
                 
                 if "赛卓-安全库存" in additional_sheets:
                     df_safety = additional_sheets["赛卓-安全库存"]
+                    df_safety = clean_df(df_safety)
                     df_safety, keys_main = apply_mapping_and_merge(df_safety, mapping_df, FIELD_MAPPINGS["赛卓-安全库存"])
                     df_safety, keys_sub = apply_extended_substitute_mapping(df_safety, mapping_df, FIELD_MAPPINGS["赛卓-安全库存"], keys_main)
                     df_safety = merge_duplicate_rows_by_key(df_safety, FIELD_MAPPINGS["赛卓-安全库存"])
