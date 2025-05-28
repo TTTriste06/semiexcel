@@ -18,7 +18,8 @@ from excel_utils import (
     merge_duplicate_rows_by_key,
     clean_key_fields,
     mark_unmatched_keys_on_name,
-    reorder_summary_columns
+    reorder_summary_columns,
+    clear_nan_cells
 )
 from mapping_utils import (
     apply_mapping_and_merge, 
@@ -171,10 +172,7 @@ class PivotProcessor:
 
             summary_preview = summary_preview.drop_duplicates(subset=["晶圆品名", "规格", "品名"]).reset_index(drop=True)
             summary_preview = merge_duplicate_product_names(summary_preview)
-
-            # ✅ 调整列顺序再写入
             summary_preview = reorder_summary_columns(summary_preview)
-
             summary_preview.to_excel(writer, sheet_name="汇总", index=False)
             adjust_column_width(writer, "汇总", summary_preview)
             ws = writer.sheets["汇总"]
@@ -233,6 +231,14 @@ class PivotProcessor:
                     ws.auto_filter.ref = f"A2:{col_letter}2"
                 else:
                     ws.auto_filter.ref = f"A1:{col_letter}1"
+
+            from openpyxl.utils import get_column_letter
+
+        # ✅ 替换这些指定表的 nan 值为空
+        for sheet_name in ["赛卓-安全库存", "赛卓-预测", "赛卓-新旧料号", "汇总"]:
+            if sheet_name in writer.sheets:
+                clear_nan_cells(writer.sheets[sheet_name])
+
 
             output_buffer.seek(0)
         
