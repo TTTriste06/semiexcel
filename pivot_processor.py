@@ -232,8 +232,6 @@ class PivotProcessor:
                 else:
                     ws.auto_filter.ref = f"A1:{col_letter}1"
 
-            from openpyxl.utils import get_column_letter
-
         # ✅ 替换这些指定表的 nan 值为空
         for sheet_name in ["赛卓-安全库存", "赛卓-预测", "赛卓-新旧料号", "汇总"]:
             if sheet_name in writer.sheets:
