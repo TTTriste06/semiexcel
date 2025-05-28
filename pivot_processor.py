@@ -149,9 +149,18 @@ class PivotProcessor:
                     # all_mapped_keys.update(keys_sub)
                     summary_preview, unmatched_forecast = append_forecast_to_summary(summary_preview, forecast_df)
                     st.success("✅ 已合并预测数据")
-                    st.write(unmatched_forecast)
-                    summary_preview = append_forecast_unmatched_to_summary_by_keys(summary_preview, forecast_df)
+                    # st.write(unmatched_forecast)
+                    
+                    # 添加未匹配的预测项
+                    summary_preview, new_forecast_rows = append_forecast_unmatched_to_summary_by_keys(summary_preview, forecast_df)
                     st.success("✅ 已添加未匹配的预测项至汇总表")
+                    
+                    # 写入汇总Sheet之后，标记红色
+                    red_fill = PatternFill(start_color="FFFFC7CE", end_color="FFFFC7CE", fill_type="solid")
+                    for row in new_forecast_rows:
+                        for col in range(1, ws.max_column + 1):
+                            ws.cell(row=row, column=col).fill = red_fill
+
 
 
                 if not df_finished.empty:
