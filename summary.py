@@ -28,8 +28,6 @@ def merge_safety_inventory(summary_df, safety_df):
     # 获取所有品名键
     all_keys = set(safety_df['品名'].dropna().astype(str).str.strip())
 
-    st.write(all_keys)
-
     # 合并
     merged = summary_df.merge(
         safety_df,
