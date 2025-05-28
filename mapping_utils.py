@@ -133,7 +133,7 @@ def apply_extended_substitute_mapping(df, mapping_df, field_map, verbose=True):
 
     substitute_records = []
 
-    for i in range(1, 6):
+    for i in range(1, 5):
         sub_spec = f"替代规格{i}"
         sub_name = f"替代品名{i}"
         sub_wafer = f"替代晶圆{i}"
