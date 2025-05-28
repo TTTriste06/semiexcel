@@ -66,6 +66,16 @@ class PivotProcessor:
         
         all_mapped_keys = set()
 
+        # 在 PivotProcessor.process 内部，写 Excel 之前：
+        # 检查是否有表含有字符串 "nan"
+        for name, df in additional_sheets.items():
+            if (df.astype(str).applymap(lambda x: x.lower() == "nan")).any().any():
+                st.warning(f"⚠️ 表 `{name}` 中含有字符串 'nan'，请确认是否清洗干净")
+        
+        with pd.ExcelWriter(output_buffer, engine="openpyxl") as writer:
+            ...
+
+
         with pd.ExcelWriter(output_buffer, engine="openpyxl") as writer:
             for filename, file_obj in uploaded_files.items():
                 try:
