@@ -6,6 +6,8 @@ from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment, Font
 from openpyxl.styles import PatternFill
 from openpyxl.worksheet.table import Table, TableStyleInfo
+from openpyxl.cell.cell import MergedCell
+
 
 
 def standardize(val):
