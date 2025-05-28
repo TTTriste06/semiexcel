@@ -119,7 +119,7 @@ def append_forecast_to_summary(summary_df, forecast_df):
 
     # 合并
     merged = summary_df.merge(forecast_df, on="品名", how="left")
-
+    st.write(unmatched_keys)
     return merged, unmatched_keys
     
 
