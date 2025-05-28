@@ -17,7 +17,8 @@ from excel_utils import (
     merge_duplicate_product_names,
     merge_duplicate_rows_by_key,
     clean_key_fields,
-    mark_unmatched_keys_on_forecast
+    mark_unmatched_keys_on_forecast,
+    reorder_summary_columns
 )
 from mapping_utils import (
     apply_mapping_and_merge, 
@@ -170,6 +171,10 @@ class PivotProcessor:
 
             summary_preview = summary_preview.drop_duplicates(subset=["晶圆品名", "规格", "品名"]).reset_index(drop=True)
             summary_preview = merge_duplicate_product_names(summary_preview)
+
+            # ✅ 调整列顺序再写入
+            summary_preview = reorder_summary_columns(summary_preview)
+
             summary_preview.to_excel(writer, sheet_name="汇总", index=False)
             adjust_column_width(writer, "汇总", summary_preview)
             ws = writer.sheets["汇总"]
