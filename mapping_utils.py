@@ -67,7 +67,7 @@ def apply_mapping_and_merge_forecast(df, mapping_df, field_map, verbose=True):
     name_col = field_map["品名"]
 
     # 清洗字段
-    df[name_col] = df[name_col].astype(str).str.strip()
+    # df[name_col] = df[name_col].astype(str).str.strip()
     mapping_df["旧品名"] = mapping_df["旧品名"].astype(str).str.strip()
     mapping_df["新品名"] = mapping_df["新品名"].astype(str).str.strip()
 
