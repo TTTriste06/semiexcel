@@ -149,7 +149,7 @@ def mark_unmatched_keys_on_name(ws, unmatched_keys, name_col=3):
     # 统一标准化格式
     unmatched_set = set(standardize(key) for key in unmatched_keys)
 
-    for row in range(1, ws.max_row + 1):  # 从第2行开始处理
+    for row in range(2, ws.max_row + 1):  # 从第2行开始处理
         name = standardize(ws.cell(row=row, column=name_col).value)
 
         if name in unmatched_set:
