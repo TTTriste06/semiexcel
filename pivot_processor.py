@@ -200,13 +200,13 @@ class PivotProcessor:
                 adjust_column_width(writer, key, df)
 
             try:
-                mark_unmatched_keys_on_name(writer.sheets["赛卓-安全库存"], unmatched_safety, wafer_col=1, spec_col=3, name_col=5)
-                mark_unmatched_keys_on_name(writer.sheets["赛卓-未交订单"], unmatched_unfulfilled, wafer_col=1, spec_col=2, name_col=3)
-                mark_unmatched_keys_on_name(writer.sheets["赛卓-预测"], unmatched_forecast, name_col=2)
-                mark_unmatched_keys_on_name(writer.sheets["汇总"], unmatched_forecast, name_col=3)
+                mark_unmatched_keys_on_name(writer.sheets["赛卓-安全库存"],name_col=5)
+                mark_unmatched_keys_on_name(writer.sheets["赛卓-未交订单"], name_col=3)
+                mark_unmatched_keys_on_name(writer.sheets["赛卓-预测"],name_col=2)
+                mark_unmatched_keys_on_name(writer.sheets["汇总"], name_col=3)
                 writer.sheets["赛卓-预测"].delete_rows(2)
-                mark_unmatched_keys_on_name(writer.sheets["赛卓-成品库存"], unmatched_finished, wafer_col=1, spec_col=2, name_col=3)
-                mark_unmatched_keys_on_name(writer.sheets["赛卓-成品在制"], unmatched_in_progress, wafer_col=3, spec_col=4, name_col=5)
+                mark_unmatched_keys_on_name(writer.sheets["赛卓-成品库存"], name_col=3)
+                mark_unmatched_keys_on_name(writer.sheets["赛卓-成品在制"], name_col=5)
                 writer.sheets["赛卓-新旧料号"].delete_rows(2)
 
             
