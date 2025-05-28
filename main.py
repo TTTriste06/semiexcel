@@ -47,6 +47,7 @@ def main():
                 except FileNotFoundError:
                     st.warning(f"⚠️ 未提供且未在 GitHub 找到历史文件：{name}")
 
+        st.write(additional_sheets)
         # 生成 Excel 汇总
         buffer = BytesIO()
         processor = PivotProcessor()
