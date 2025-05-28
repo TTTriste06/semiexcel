@@ -23,7 +23,7 @@ def append_forecast_unmatched_to_summary_by_keys(summary_df: pd.DataFrame, forec
     forecast_cols = [col for col in forecast_df.columns if "预测" in col]
 
     # 只保留品名、生产料号和预测值
-    needed_cols = ["品名", "生产料号"] + forecast_cols
+    needed_cols = ["产品型号", "生产料号"] + forecast_cols
     forecast_subset = forecast_df[needed_cols].copy()
 
     # 只保留预测值不为0 且 在 summary_df 中未匹配的（即不在已有的品名中）
@@ -33,8 +33,8 @@ def append_forecast_unmatched_to_summary_by_keys(summary_df: pd.DataFrame, forec
     unmatched_forecast["规格"] = ""
     unmatched_forecast["晶圆品名"] = ""
     new_rows = unmatched_forecast.rename(columns={
-        "品名": "品名",
-        "生产料号": "生产料号"
+        "产品型号": "规格",
+        "生产料号": "品名"
     })
 
     # 只保留汇总表中已有的列（避免列不一致）
