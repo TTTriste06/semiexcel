@@ -200,13 +200,20 @@ class PivotProcessor:
                 adjust_column_width(writer, key, df)
 
             try:
+                
                 mark_unmatched_keys_on_name(writer.sheets["赛卓-安全库存"],unmatched_safety, name_col=5)
+                st.write("1")
                 mark_unmatched_keys_on_name(writer.sheets["赛卓-未交订单"], unmatched_unfulfilled, name_col=3)
+                st.write("2")
                 mark_unmatched_keys_on_name(writer.sheets["赛卓-预测"], unmatched_forecast, name_col=2)
+                st.write("3")
                 mark_unmatched_keys_on_name(writer.sheets["汇总"], unmatched_forecast, name_col=3)
+                st.write("4")
                 writer.sheets["赛卓-预测"].delete_rows(2)
                 mark_unmatched_keys_on_name(writer.sheets["赛卓-成品库存"], unmatched_finished, name_col=3)
+                st.write("5")
                 mark_unmatched_keys_on_name(writer.sheets["赛卓-成品在制", unmatched_in_progress], name_col=5)
+                st.write("6")
                 writer.sheets["赛卓-新旧料号"].delete_rows(2)
 
 
