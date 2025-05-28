@@ -6,30 +6,45 @@ def standardize(val):
     return str(val).strip().replace("\u3000", " ").strip('\'"“”‘’')
 
 
-def append_forecast_unmatched_to_summary_by_keys(ws_summary, ws_forecast, unmatched_names, name_col=2, start_col_forecast=4):
+def append_forecast_unmatched_to_summary_by_keys(summary_df: pd.DataFrame, forecast_df: pd.DataFrame) -> pd.DataFrame:
     """
-    将预测表中品名在 unmatched_names 列表中的行，追加到汇总表末尾，并复制预测信息。
+    将未匹配的预测记录（被标红）中的产品料号、生产料号和预测值添加到汇总表末尾。
 
     参数：
-    - ws_summary: openpyxl 的汇总 worksheet
-    - ws_forecast: openpyxl 的预测 worksheet
-    - unmatched_names: list[str]，未匹配的品名（如 keys_main）
-    - name_col: 品名所在列号（默认第3列）
-    - start_col_forecast: 从第几列开始是预测值（默认第4列）
+    - summary_df: 汇总 DataFrame
+    - forecast_df: 原始预测表，包含未匹配记录（标红）
+
+    返回：
+    - summary_df: 追加了未匹配预测项的新 DataFrame
     """
-    unmatched_set = set(standardize(name) for name in unmatched_names)
-    max_summary_row = ws_summary.max_row
 
-    for row in range(2, ws_forecast.max_row + 1):
-        name = standardize(ws_forecast.cell(row=row, column=name_col).value)
-        if name in unmatched_set:
-            new_row = max_summary_row + 1
-            # 填品名
-            ws_summary.cell(row=new_row, column=name_col).value = name
+    # 找出预测列（如“5月预测”、“6月预测”...）
+    forecast_cols = [col for col in forecast_df.columns if "预测" in col]
 
-            # 拷贝预测数据
-            for col in range(start_col_forecast, ws_forecast.max_column + 1):
-                value = ws_forecast.cell(row=row, column=col).value
-                ws_summary.cell(row=new_row, column=col).value = value
+    # 只保留品名、生产料号和预测值
+    needed_cols = ["品名", "生产料号"] + forecast_cols
+    forecast_subset = forecast_df[needed_cols].copy()
 
-            max_summary_row += 1
+    # 只保留预测值不为0 且 在 summary_df 中未匹配的（即不在已有的品名中）
+    unmatched_forecast = forecast_subset[~forecast_subset["品名"].isin(summary_df["品名"])]
+
+    # 创建新行，填入品名、规格、晶圆品名
+    unmatched_forecast["规格"] = ""
+    unmatched_forecast["晶圆品名"] = ""
+    new_rows = unmatched_forecast.rename(columns={
+        "品名": "品名",
+        "生产料号": "生产料号"
+    })
+
+    # 只保留汇总表中已有的列（避免列不一致）
+    summary_cols = summary_df.columns
+    new_rows = new_rows[[col for col in summary_cols if col in new_rows.columns]]
+    for col in summary_cols:
+        if col not in new_rows.columns:
+            new_rows[col] = ""
+
+    # 调整顺序并拼接
+    new_rows = new_rows[summary_cols]
+    summary_df = pd.concat([summary_df, new_rows], ignore_index=True)
+
+    return summary_df
