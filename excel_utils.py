@@ -35,9 +35,15 @@ def clean_df(df):
     return df
 
 def clear_nan_cells(ws):
+    """
+    遍历指定工作表，将 'nan'、'NaN'、None 和空字符串统一清空。
+    """
     for row in ws.iter_rows():
         for cell in row:
-            if cell.value is not None and str(cell.value).strip().lower() == "nan":
+            if isinstance(cell, MergedCell):
+                continue
+            val = cell.value
+            if val is None or (isinstance(val, float) and pd.isna(val)) or str(val).strip().lower() == "nan":
                 cell.value = ""
 
 def adjust_column_width(writer, sheet_name, df):
