@@ -273,6 +273,25 @@ class PivotProcessor:
                 else:
                     ws.auto_filter.ref = f"A1:{col_letter}1"
 
+
+        # 示例：构建一个“产品生产计划”表（根据汇总数据生成）
+        try:
+            # 这里只是示例，实际字段你可以根据需求修改
+            if "汇总" in writer.sheets:
+                df_plan = summary_preview[["晶圆品名", "规格", "品名"]].copy()
+                df_plan["计划开始日期"] = datetime.today().strftime("%Y-%m-%d")
+                df_plan["预计完成日期"] = (datetime.today() + timedelta(days=7)).strftime("%Y-%m-%d")
+                df_plan["生产数量"] = 0  # 可以后续填充实际计划数量
+                df_plan["生产状态"] = "待排产"  # 默认状态
+        
+                df_plan.to_excel(writer, sheet_name="产品生产计划", index=False)
+                adjust_column_width(writer, "产品生产计划", df_plan)
+                st.success("✅ 已生成产品生产计划表")
+        except Exception as e:
+            st.warning(f"⚠️ 生成产品生产计划失败：{e}")
+
+    
+
         # ✅ 替换这些指定表的 nan 值为空
         for sheet_name in ["赛卓-安全库存", "赛卓-预测", "赛卓-新旧料号", "汇总"]:
             if sheet_name in writer.sheets:
