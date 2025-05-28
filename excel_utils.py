@@ -9,16 +9,6 @@ from openpyxl.worksheet.table import Table, TableStyleInfo
 from openpyxl.cell.cell import MergedCell
 
 
-# 每个 sheet 中用于标记的字段名（目标列）及表头所在行（从 1 开始）
-sheet_field_config = {
-    "赛卓-安全库存": {"field_name": "ProductionNO.", "header_row": 1},
-    "赛卓-未交订单": {"field_name": "品名", "header_row": 1},
-    "赛卓-预测": {"field_name": "生产料号", "header_row": 1},
-    "汇总": {"field_name": "品名", "header_row": 2},  # 汇总表通常从第2行起才是字段行
-    "赛卓-成品库存": {"field_name": "品名", "header_row": 1},
-    "赛卓-成品在制": {"field_name": "产品品名", "header_row": 1},
-}
-
 def get_column_index_by_name(ws, target_name: str, header_row: int = 1):
     """
     从 Excel sheet 的指定表头行中查找列名对应的列号（1-based）
