@@ -5,6 +5,7 @@ import pandas as pd
 import streamlit as st
 from datetime import datetime, timedelta
 from openpyxl.utils import get_column_letter
+from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl import load_workbook
 from config import CONFIG
@@ -36,6 +37,7 @@ from summary import (
     append_product_in_progress
 )
 from append_summary import append_forecast_unmatched_to_summary_by_keys
+
 
 FIELD_MAPPINGS = {
     "赛卓-未交订单": {"规格": "规格", "品名": "品名", "晶圆品名": "晶圆品名"},
@@ -267,8 +269,8 @@ class PivotProcessor:
                 st.warning(f"⚠️ 未匹配标记失败：{e}")
 
 
-            # ✅ 添加一个新的 Sheet：产品生产计划
-    
+
+            # ✅ 创建“产品生产计划”表，写入从第 2 行开始
             try:
                 if not summary_preview.empty:
                     df_plan = summary_preview[["晶圆品名", "规格", "品名"]].copy()
@@ -277,25 +279,25 @@ class PivotProcessor:
                     df_plan["生产数量"] = 0
                     df_plan["生产状态"] = "待排产"
             
-                    # 写入空白第 1 行 + 数据从第 2 行开始（通过起始行设置 header=False 再手动写表头）
                     sheet_name = "产品生产计划"
-                    df_empty_row = pd.DataFrame([[""] * len(df_plan.columns)], columns=df_plan.columns)
-                    df_with_blank_top = pd.concat([df_empty_row, df_plan], ignore_index=True)
+                    # 创建空 sheet
+                    wb = writer.book
+                    ws = wb.create_sheet(title=sheet_name)
             
-                    df_with_blank_top.to_excel(writer, sheet_name=sheet_name, index=False, header=False)
-                    ws = writer.sheets[sheet_name]
-            
-                    # 手动写入表头到第 2 行
-                    for col_idx, col_name in enumerate(df_plan.columns, start=1):
-                        ws.cell(row=2, column=col_idx, value=col_name)
+                    # 手动从第 2 行写入表头与数据
+                    for r_idx, row in enumerate(dataframe_to_rows(df_plan, index=False, header=True), start=2):
+                        for c_idx, value in enumerate(row, start=1):
+                            ws.cell(row=r_idx, column=c_idx, value=value)
             
                     adjust_column_width(writer, sheet_name, df_plan)
+            
+                    # 设置自动筛选，从 A2 开始
                     ws.auto_filter.ref = f"A2:{get_column_letter(ws.max_column)}2"
             
-                    st.success("✅ 已添加新 Sheet：产品生产计划，表头位于第 2 行")
-            
+                    st.success("✅ 产品生产计划表写入成功，表头从第 2 行开始")
             except Exception as e:
                 st.warning(f"⚠️ 创建产品生产计划 Sheet 失败：{e}")
+
 
 
 
