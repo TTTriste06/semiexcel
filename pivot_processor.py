@@ -158,7 +158,7 @@ class PivotProcessor:
                     
                     
                     # 添加未匹配的预测项
-                    summary_preview, new_forecast_rows = append_forecast_unmatched_to_summary_by_keys(summary_preview, forecast_df)
+                    summary_preview = append_forecast_unmatched_to_summary_by_keys(summary_preview, forecast_df)
                     st.success("✅ 已添加未匹配的预测项至汇总表")
 
                 
