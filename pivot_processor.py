@@ -87,7 +87,7 @@ class PivotProcessor:
                             "替代规格3", "替代品名3", "替代晶圆3",
                             "替代规格4", "替代品名4", "替代晶圆4",
                             "替代规格5", "替代品名5", "替代晶圆5"
-                        ] + list(mapping_df.columns[22:])
+                        ] + list(mapping_df.columns[25:])
                         st.success(f"✅ `{sheet_name}` 正在进行新旧料号替换...")
 
                         st.write(mapping_df)
