@@ -112,17 +112,15 @@ def append_forecast_to_summary(summary_df, forecast_df):
     # 去重，保留每个品名第一条记录
     # forecast_df = forecast_df[key_col + month_cols].drop_duplicates(subset=key_col)
 
-    st.write(forecast_df)
     # 查找未匹配的品名
     summary_keys = set(summary_df["品名"].dropna().astype(str).str.strip())
-    st.write(forecast_df["品名"])
+    # st.write(forecast_df["品名"])
     forecast_keys = forecast_df["品名"].dropna().astype(str).str.strip()
-    st.write(forecast_keys)
+    # st.write(forecast_keys)
     unmatched_keys = [key for key in forecast_keys if key not in summary_keys]
 
     # 合并
     merged = summary_df.merge(forecast_df, on="品名", how="left")
-    st.write(unmatched_keys)
     return merged, unmatched_keys
     
 
