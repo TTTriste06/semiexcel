@@ -18,7 +18,11 @@ from excel_utils import (
     merge_duplicate_rows_by_key,
     clean_key_fields
 )
-from mapping_utils import apply_mapping_and_merge, apply_mapping_and_merge_forecast, apply_extended_substitute_mapping
+from mapping_utils import (
+    apply_mapping_and_merge, 
+    apply_mapping_and_merge_forecast, 
+    apply_extended_substitute_mapping
+)
 from month_selector import process_history_columns
 from summary import (
     merge_safety_inventory,
