@@ -107,7 +107,6 @@ class PivotProcessor:
                         ] + list(mapping_df.columns[22:])
                         st.success(f"✅ `{sheet_name}` 正在进行新旧料号替换...")
 
-                        st.write(mapping_df)
                         df, mapped_keys = apply_mapping_and_merge(df, mapping_df, FIELD_MAPPINGS[sheet_name])
                         df, keys_sub = apply_extended_substitute_mapping(df, mapping_df, FIELD_MAPPINGS[sheet_name], None)
                         df = clean_key_fields(df, FIELD_MAPPINGS[sheet_name])
@@ -148,7 +147,7 @@ class PivotProcessor:
             try:
                 if "赛卓-预测" in additional_sheets:
                     forecast_df = additional_sheets["赛卓-预测"]
-
+                    st.write("11")
                     st.write(forecast_df)
                     forecast_df = clean_df(forecast_df)
                     forecast_df, keys_main = apply_mapping_and_merge_forecast(forecast_df, mapping_df, FIELD_MAPPINGS["赛卓-预测"])
