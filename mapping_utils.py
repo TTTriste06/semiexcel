@@ -80,7 +80,7 @@ def apply_mapping_and_merge_forecast(df, mapping_df, field_map, verbose=True):
 
         # 生成布尔掩码：成功被新旧料号替换的行
         mask_None = (
-            df_merged["新品名"].notna() & (df_merged["新品名"].astype(str).str.strip() != "") &
+            df_merged["新品名"].notna() & (df_merged["新品名"].astype(str).str.strip() != "")
         )
 
         df_merged["_由新旧料号映射"] = mask_None  # 标记列 ✅
