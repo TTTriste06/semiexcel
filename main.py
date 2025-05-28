@@ -31,6 +31,7 @@ def main():
             st.write(name)
             if name == "赛卓-预测":
                 sheet_name = "Sheet1"
+            st.write(sheet_name)
             if file:
                 file_bytes = file.read()
                 file_io = BytesIO(file_bytes)
