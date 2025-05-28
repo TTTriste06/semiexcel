@@ -217,17 +217,25 @@ class PivotProcessor:
                 adjust_column_width(writer, key, df)
 
             try:
-                unmatched_in_progress = [tuple(k) if isinstance(k, list) else k for k in unmatched_in_progress]
+                sheet_key_mapping = {
+                    "赛卓-安全库存": unmatched_safety,
+                    "赛卓-未交订单": unmatched_unfulfilled,
+                    "赛卓-预测": unmatched_forecast,
+                    "汇总": unmatched_forecast,
+                    "赛卓-成品库存": unmatched_finished,
+                    "赛卓-成品在制": unmatched_in_progress,
+                }
                 
-                mark_unmatched_keys_on_name(writer.sheets["赛卓-安全库存"],unmatched_safety, name_col=5)
-                mark_unmatched_keys_on_name(writer.sheets["赛卓-未交订单"], unmatched_unfulfilled, name_col=3)
-                mark_unmatched_keys_on_name(writer.sheets["赛卓-预测"], unmatched_forecast, name_col=2)
-                mark_unmatched_keys_on_name(writer.sheets["汇总"], unmatched_forecast, name_col=3)
-                mark_unmatched_keys_on_name(writer.sheets["赛卓-成品库存"], unmatched_finished, name_col=3)
-                mark_unmatched_keys_on_name(writer.sheets["赛卓-成品在制"], unmatched_in_progress, name_col=5)
-
-
+                for sheet_name, unmatched_keys in sheet_key_mapping.items():
+                    if sheet_name in writer.sheets:
+                        ws = writer.sheets[sheet_name]
+                        col_idx = get_column_index_by_name(ws, "品名")
+                        if col_idx:
+                            mark_unmatched_keys_on_name(ws, unmatched_keys, name_col=col_idx)
+                        else:
+                            st.warning(f"⚠️ 无法在 `{sheet_name}` 中定位“品名”列，跳过标记")
                 
+                                
 
 
                 """
