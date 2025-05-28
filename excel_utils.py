@@ -113,7 +113,7 @@ def mark_unmatched_keys_on_sheet(ws, unmatched_keys, wafer_col=1, spec_col=2, na
             for col in range(1, ws.max_column + 1):
                 ws.cell(row=row, column=col).fill = red_fill
 
-def mark_unmatched_keys_on_forecast(ws, unmatched_keys, name_col=3):
+def mark_unmatched_keys_on_name(ws, unmatched_keys, name_col=3):
     """
     在 openpyxl 工作表中标红未匹配的品名行。
 
