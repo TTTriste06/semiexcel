@@ -31,7 +31,7 @@ def main():
             st.write(name)
             sheet_name = 0
             if name == "赛卓-预测.xlsx":
-                sheet_name = "Sheet1"
+                sheet_name = 1
             st.write(sheet_name)
             if file:
                 file_bytes = file.read()
