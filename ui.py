@@ -1,6 +1,9 @@
 import streamlit as st
 import pandas as pd
 from config import CONFIG
+from dateutil.relativedelta import relativedelta
+from datetime import date
+
 
 def setup_sidebar():
     with st.sidebar:
@@ -21,6 +24,21 @@ def get_uploaded_files():
         st.write(CONFIG["selected_month"])
     else:
         CONFIG["selected_month"] = None
+
+    # 🗓️ 生成起始月份选项（从一年前到六个月后）
+    today = date.today()
+    start_month = today - relativedelta(months=12)
+    end_month = today + relativedelta(months=6)
+    month_options = pd.date_range(start=start_month, end=end_month, freq="MS").to_list()
+    
+    # 📅 月份选择框
+    selected_month = st.selectbox(
+        "📆 请选择排产计划起始月份",
+        month_options,
+        format_func=lambda x: x.strftime("%Y年%m月")
+    )
+    CONFIG["selected_plan_month"] = selected_month
+
         
     uploaded_files = st.file_uploader(
         "📂 上传 5 个核心 Excel 文件（未交订单/成品在制/成品库存/晶圆库存/CP在制）",
