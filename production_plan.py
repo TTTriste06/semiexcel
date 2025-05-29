@@ -1,5 +1,6 @@
 import re
 import pandas as pd
+import streamlit as st
 from openpyxl.styles import PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 from dateutil.relativedelta import relativedelta
@@ -174,10 +175,13 @@ def calculate_first_month_plan(df_plan: pd.DataFrame, summary_df: pd.DataFrame, 
     finished_inventory = safe_float(summary_df[col_finished_1])
     in_progress = safe_float(summary_df[col_in_progress])
 
+    st.write(part_inv,forecast_1,order_1,forecast_2,order_2,finished_inventory,in_progress)
+
     # ✅ 按照公式计算
     plan = part_inv + pd.DataFrame({"a": forecast_1, "b": order_1}).max(axis=1) + \
            pd.DataFrame({"a": forecast_2, "b": order_2}).max(axis=1) - \
            finished_inventory - in_progress
+    st.write(plan)
 
     # ✅ clip 保底 + 转 int
     plan = plan.clip(lower=0).round().astype(int)
