@@ -296,6 +296,9 @@ class PivotProcessor:
             # ✅ 创建“产品生产计划”表，写入从第 2 行开始
             try:
                 if not summary_preview.empty:
+
+                    start_date = CONFIG.get("selected_plan_month", datetime.today())
+
                     df_plan = summary_preview[["晶圆品名", "规格", "品名"]].copy()
                     df_plan["封装形式"] = ""
                     df_plan["供应商"] = ""
@@ -309,11 +312,11 @@ class PivotProcessor:
                     df_plan["安全库存"] = df_plan["安全库存_填入"].fillna("")
                     df_plan.drop(columns=["安全库存_填入"], inplace=True)
 
-                    start_date = CONFIG.get("selected_plan_month", datetime.today())
-
+                    # 投单计划
                     df_plan = calculate_first_month_plan(df_plan, summary_preview, start_date)
 
 
+                    
                     sheet_name = "产品生产计划"
                     # 创建空 sheet
                     wb = writer.book
