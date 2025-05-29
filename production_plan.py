@@ -4,6 +4,7 @@ from openpyxl.utils import get_column_letter
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
 from excel_utils import adjust_column_width_ws
+from openpyxl.styles import Border, Side
 
 
 def add_colored_monthly_plan_headers(ws, start_col: int, start_date: datetime, pivot_unfulfilled) -> int:
@@ -29,7 +30,7 @@ def add_colored_monthly_plan_headers(ws, start_col: int, start_date: datetime, p
 
     # ✅ 每月对应背景色（12个以内自动轮换）
     month_colors = [
-        "FFFF00", "32CD32", "9932CC", "FFB6C1", "FFA500", "87CEFA"
+        "FFFF00", "ADFF2F", "9932CC", "FFB6C1", "FFA500", "87CEFA"
     ]
 
     # ✅ 提取最大月份（从未交订单列名中解析）
@@ -74,5 +75,20 @@ def add_colored_monthly_plan_headers(ws, start_col: int, start_date: datetime, p
 
     # ✅ 自动调整新列区域的列宽
     adjust_column_width_ws(ws)
+
+
+     # ✅ 设置黑边框
+
+
+    black_border = Border(
+        left=Side(border_style="thin", color="000000"),
+        right=Side(border_style="thin", color="000000"),
+        top=Side(border_style="thin", color="000000"),
+        bottom=Side(border_style="thin", color="000000")
+    )
+
+    for row in [1, 2]:
+        for col in range(1, ws.max_column + 1):
+            ws.cell(row=row, column=col).border = black_border
 
     return current_col  # 返回最后写入的列号
