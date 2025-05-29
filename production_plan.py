@@ -92,3 +92,56 @@ def add_colored_monthly_plan_headers(ws, start_col: int, start_date: datetime, p
             ws.cell(row=row, column=col).border = black_border
 
     return current_col  # 返回最后写入的列号
+
+
+
+def calculate_first_month_plan(df_plan: pd.DataFrame, summary_df: pd.DataFrame, first_month: datetime) -> pd.DataFrame:
+    """
+    根据汇总数据计算“产品生产计划”中第一个月的“成品投单计划”列。
+
+    参数：
+    - df_plan: 产品生产计划表（目标写入列）
+    - summary_df: 汇总表（含预测、订单、安全库存等信息）
+    - first_month: 起始月份（datetime 对象）
+
+    返回：
+    - 更新后的 df_plan（添加了该列）
+    """
+
+    # 构造字段名
+    month1_str = first_month.strftime("%Y年%m月")
+    month2_str = (first_month + relativedelta(months=1)).strftime("%Y年%m月")
+
+    col_forecast_1 = f"{month1_str}预测"
+    col_order_1 = f"{month1_str}未交订单数量"
+    col_forecast_2 = f"{month2_str}预测"
+    col_order_2 = f"{month2_str}未交订单数量"
+
+    # 防止字段缺失
+    for col in [col_forecast_1, col_order_1, col_forecast_2, col_order_2,
+                " InvPart", "数量_成品仓", "数量_HOLD仓", "成品在制"]:
+        if col not in summary_df.columns:
+            summary_df[col] = 0
+
+    # 计算各项值
+    part_inv = summary_df[" InvPart"].fillna(0)
+    forecast_1 = summary_df[col_forecast_1].fillna(0)
+    order_1 = summary_df[col_order_1].fillna(0)
+    forecast_2 = summary_df[col_forecast_2].fillna(0)
+    order_2 = summary_df[col_order_2].fillna(0)
+    finished_inventory = summary_df["数量_成品仓"].fillna(0) + summary_df["数量_HOLD仓"].fillna(0)
+    in_progress = summary_df["成品在制"].fillna(0)
+
+    plan = part_inv + pd.DataFrame({"a": forecast_1, "b": order_1}).max(axis=1) + \
+           pd.DataFrame({"a": forecast_2, "b": order_2}).max(axis=1) - \
+           finished_inventory - in_progress
+
+    # 确保没有负值
+    plan = plan.clip(lower=0).astype(int)
+
+    # 写入 df_plan
+    col_target = f"{month1_str}_成品投单计划"
+    df_plan[col_target] = plan
+
+    return df_plan
+
