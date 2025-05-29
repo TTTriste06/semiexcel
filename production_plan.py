@@ -159,7 +159,7 @@ def calculate_first_month_plan(df_plan: pd.DataFrame, summary_df: pd.DataFrame, 
 
     # ✅ 保证字段存在
     needed_columns = [col_forecast_1, col_order_1, col_forecast_2, col_order_2,
-                      col_inv, col_finished_1, col_finished_2, col_in_progress]
+                      col_inv, col_finished_1, col_in_progress]
     for col in needed_columns:
         if col not in summary_df.columns:
             summary_df[col] = 0
@@ -173,7 +173,7 @@ def calculate_first_month_plan(df_plan: pd.DataFrame, summary_df: pd.DataFrame, 
     order_1 = safe_float(summary_df[col_order_1])
     forecast_2 = safe_float(summary_df[col_forecast_2])
     order_2 = safe_float(summary_df[col_order_2])
-    finished_inventory = safe_float(summary_df[col_finished_1]) + safe_float(summary_df[col_finished_2])
+    finished_inventory = safe_float(summary_df[col_finished_1])
     in_progress = safe_float(summary_df[col_in_progress])
 
     # ✅ 按照公式计算
