@@ -72,7 +72,7 @@ def adjust_column_width(writer, sheet_name, df):
         # 获取该列中所有字符串长度的最大值
         max_content_len = df[col].astype(str).str.len().max()
         header_len = len(str(col))
-        column_width = max(max_content_len, header_len) * 1.2 + 10
+        column_width = max(max_content_len, header_len) * 1.2 + 8
         worksheet.column_dimensions[get_column_letter(idx)].width = min(column_width, 50)
 
 def merge_header_for_summary(ws, df, label_ranges):
