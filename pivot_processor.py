@@ -37,6 +37,7 @@ from summary import (
     append_product_in_progress
 )
 from append_summary import append_forecast_unmatched_to_summary_by_keys
+from production_plan import add_colored_monthly_plan_headers
 
 
 FIELD_MAPPINGS = {
@@ -177,6 +178,24 @@ class PivotProcessor:
                     
                 summary_preview, unmatched_unfulfilled = append_unfulfilled_summary_columns(summary_preview, pivot_unfulfilled)
                 st.success("✅ 已合并未交订单")
+                
+                # ✅ 提取最大月份字段
+                month_pattern = re.compile(r"(\d{4})年(\d{1,2})月.*未交订单数量")
+                max_month = None
+                
+                for col in pivot_unfulfilled.columns:
+                    match = month_pattern.match(col)
+                    if match:
+                        year, month = int(match.group(1)), int(match.group(2))
+                        dt = datetime(year, month, 1)
+                        if not max_month or dt > max_month:
+                            max_month = dt
+                
+                if max_month:
+                    end_date = max_month
+                else:
+                    end_date = datetime.today() + relativedelta(months=6)  # 默认未来 6 个月
+                
 
                 if not df_finished.empty:
                     summary_preview, unmatched_finished = merge_finished_inventory(summary_preview, df_finished)
@@ -274,11 +293,14 @@ class PivotProcessor:
             try:
                 if not summary_preview.empty:
                     df_plan = summary_preview[["晶圆品名", "规格", "品名"]].copy()
-                    df_plan["计划开始日期"] = datetime.today().strftime("%Y-%m-%d")
-                    df_plan["预计完成日期"] = (datetime.today() + timedelta(days=7)).strftime("%Y-%m-%d")
-                    df_plan["生产数量"] = 0
-                    df_plan["生产状态"] = "待排产"
-            
+                    df_plan["封装形式"] = ""
+                    df_plan["供应商"] = ""
+                    df_plan["PC"] = ""
+                    df_plan["安全库存"] = ""
+
+                    
+
+
                     sheet_name = "产品生产计划"
                     # 创建空 sheet
                     wb = writer.book
@@ -288,7 +310,12 @@ class PivotProcessor:
                     for r_idx, row in enumerate(dataframe_to_rows(df_plan, index=False, header=True), start=2):
                         for c_idx, value in enumerate(row, start=1):
                             ws.cell(row=r_idx, column=c_idx, value=value)
-            
+
+                    start_date = CONFIG.get("selected_plan_month", datetime.today())
+                    start_col = ws.max_column + 1
+                    add_colored_monthly_plan_headers(ws, start_col=start_col, start_date=start_date, pivot_unfulfilled=pivot_unfulfilled)
+
+
                     adjust_column_width(writer, sheet_name, df_plan)
             
                     # 设置自动筛选，从 A2 开始
