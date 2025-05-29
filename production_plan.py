@@ -148,10 +148,10 @@ def calculate_first_month_plan(df_plan: pd.DataFrame, summary_df: pd.DataFrame, 
     month2_str = (first_month + relativedelta(months=1)).strftime("%Y年%m月")
 
     # ✅ 计算用于列名的字符串
-    forecast_1_col = f"{first_month.month}月预测"
-    order_1_col = f"未交订单数量_{first_month.strftime('%Y-%m')}"
-    forecast_2_col = f"{(first_month + relativedelta(months=1)).month}月预测"
-    order_2_col = f"未交订单数量_{(first_month + relativedelta(months=1)).strftime('%Y-%m')}"
+    forecast_1 = f"{first_month.month}月预测"
+    order_1 = f"未交订单数量_{first_month.strftime('%Y-%m')}"
+    forecast_2 = f"{(first_month + relativedelta(months=1)).month}月预测"
+    order_2 = f"未交订单数量_{(first_month + relativedelta(months=1)).strftime('%Y-%m')}"
 
     col_inv = " InvPart"
     col_finished_1 = "数量_成品仓"
