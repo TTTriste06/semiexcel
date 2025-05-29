@@ -9,16 +9,6 @@ from openpyxl.worksheet.table import Table, TableStyleInfo
 from openpyxl.cell.cell import MergedCell
 
 
-def get_column_index_by_name(ws, target_name: str, header_row: int = 1):
-    """
-    从 Excel sheet 的指定表头行中查找列名对应的列号（1-based）
-    """
-    for cell in ws[header_row]:
-        if str(cell.value).strip() == target_name:
-            return cell.column
-    return None
-
-
 def standardize(val):
     """
     将输入标准化为可比较的字符串：
@@ -40,6 +30,12 @@ def standardize(val):
 
     return val
 
+
+
+
+
+
+
 def clean_df(df):
     df = df.fillna("")  # 处理真正的 NaN/None
     df = df.applymap(lambda x: "" if str(x).strip().lower() == "nan" else str(x).strip() if isinstance(x, str) else x)
@@ -58,6 +54,27 @@ def clear_nan_cells(ws):
             if val is None or (isinstance(val, float) and pd.isna(val)) or str(val).strip().lower() == "nan":
                 cell.value = ""
 
+
+def clean_key_fields(df, field_map):
+    for col in [field_map["规格"], field_map["品名"], field_map["晶圆品名"]]:
+        df[col] = (
+            df[col]
+            .astype(str)
+            .str.replace(r"\s+", "", regex=True)  # 移除所有空白字符（含空格、全角空格、Tab、换行）
+            .str.replace(r"[\u200b\u200e\u200f]", "", regex=True)  # 清除不可见字符
+            .str.strip()
+        )
+    return df
+
+
+
+
+
+
+
+
+
+
 def adjust_column_width(writer, sheet_name, df):
     """
     自动调整 Excel 工作表中各列的宽度以适应内容长度。
@@ -74,6 +91,31 @@ def adjust_column_width(writer, sheet_name, df):
         header_len = len(str(col))
         column_width = max(max_content_len, header_len) * 1.2 + 8
         worksheet.column_dimensions[get_column_letter(idx)].width = min(column_width, 50)
+
+def adjust_column_width_ws(ws):
+    """
+    根据每个单元格内容长度，自动调整 openpyxl Worksheet 的列宽。
+    """
+    column_widths = {}
+    for row in ws.iter_rows(values_only=True):
+        for i, cell in enumerate(row):
+            if cell is not None:
+                width = len(str(cell))
+                if i in column_widths:
+                    column_widths[i] = max(column_widths[i], width)
+                else:
+                    column_widths[i] = width
+
+    for i, width in column_widths.items():
+        col_letter = get_column_letter(i + 1)
+        ws.column_dimensions[col_letter].width = width + 2  # 可调节 +2 缓冲
+
+
+
+
+
+
+
 
 def merge_header_for_summary(ws, df, label_ranges):
     """
@@ -109,6 +151,136 @@ def merge_header_for_summary(ws, df, label_ranges):
         cell.value = label
         cell.alignment = Alignment(horizontal="center", vertical="center")
         cell.font = Font(bold=True)
+
+def get_column_index_by_name(ws, target_name: str, header_row: int = 1):
+    """
+    从 Excel sheet 的指定表头行中查找列名对应的列号（1-based）
+    """
+    for cell in ws[header_row]:
+        if str(cell.value).strip() == target_name:
+            return cell.column
+    return None
+
+
+def merge_duplicate_product_names(summary_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    合并 '汇总' 表中重复的品名（按品名分组），选用第一行的 晶圆品名 和 规格，合并其数值列。
+    """
+    # 确保必要列存在
+    required_cols = ["晶圆品名", "规格", "品名"]
+    for col in required_cols:
+        if col not in summary_df.columns:
+            raise ValueError(f"缺少必要列：{col}")
+
+    # 识别数值列（排除主键列）
+    value_cols = [col for col in summary_df.columns if col not in required_cols]
+
+    # 分组合并数值列
+    grouped = summary_df.groupby("品名", sort=False)
+
+    merged_rows = []
+
+    for name, group in grouped:
+        if len(group) == 1:
+            merged_rows.append(group.iloc[0])
+        else:
+            # 取第一行的 晶圆品名 和 规格
+            base_row = group.iloc[0][required_cols].copy()
+            summed_values = group[value_cols].apply(pd.to_numeric, errors="coerce").fillna(0).sum()
+            merged_row = pd.concat([base_row, summed_values])
+            merged_rows.append(merged_row)
+
+    # 合并所有结果
+    merged_df = pd.DataFrame(merged_rows)
+
+    # 保证列顺序与原始一致
+    return merged_df[summary_df.columns]
+
+def merge_duplicate_rows_by_key(df: pd.DataFrame, field_map: dict, verbose=True) -> pd.DataFrame:
+    """
+    合并给定表格中 '规格' + '品名' + '晶圆品名' 相同的行：
+    - 数值列求和
+    - 其他字段取第一行
+    - 主键字段来自 field_map
+
+    增加 verbose 输出用于调试未合并成功的情况
+    """
+
+    key_cols = [field_map["规格"], field_map["品名"], field_map["晶圆品名"]]
+
+    for col in key_cols:
+        if col not in df.columns:
+            raise ValueError(f"缺少必要列：{col}")
+
+    # 主键列清洗
+    for col in key_cols:
+        df[col] = (
+            df[col]
+            .astype(str)
+            .str.strip()
+            .str.replace(r"\s+", "", regex=True)
+            .str.replace(r"[\u200b\u200e\u200f\n\r]", "", regex=True)
+        )
+
+    # 调试输出重复主键组合
+    dup_keys = df.groupby(key_cols).size().reset_index(name="count")
+    dup_keys = dup_keys[dup_keys["count"] > 1]
+
+    if verbose and not dup_keys.empty:
+        st.warning(f"⚠️ 检测到 {len(dup_keys)} 个重复主键组合，准备合并：")
+        for idx, row in dup_keys.iterrows():
+            key_values = tuple(row[col] for col in key_cols)
+            st.write(f"🔁 主键组：{key_values}")
+            st.dataframe(df[
+                (df[key_cols[0]] == key_values[0]) &
+                (df[key_cols[1]] == key_values[1]) &
+                (df[key_cols[2]] == key_values[2])
+            ])
+
+    # 数值列合并
+    value_cols = [col for col in df.columns if col not in key_cols and pd.api.types.is_numeric_dtype(df[col])]
+    grouped = df.groupby(key_cols, sort=False)
+    merged_rows = []
+
+    for keys, group in grouped:
+        if len(group) == 1:
+            merged_rows.append(group.iloc[0])
+        else:
+            base_row = group.iloc[0][df.columns.difference(value_cols)].copy()
+            summed_values = group[value_cols].apply(pd.to_numeric, errors="coerce").fillna(0).sum()
+            merged_row = pd.concat([base_row, summed_values])
+            merged_rows.append(merged_row)
+
+    merged_df = pd.DataFrame(merged_rows)
+
+    # 保持列顺序一致
+    return merged_df[df.columns]
+
+
+# 💡 自动按模块排序汇总列：安全库存 → 未交订单 → 预测 → 其他
+def reorder_summary_columns(df):
+    col_list = df.columns.tolist()
+
+    # 区分模块
+    safe_cols = [col for col in col_list if "Inv" in col]
+    unfulfilled_cols = [col for col in col_list if "未交订单" in col or col == "总未交订单"]
+    forecast_cols = [col for col in col_list if "预测" in col]
+    base_cols = ["晶圆品名", "规格", "品名"]
+    other_cols = [col for col in col_list if col not in base_cols + safe_cols + unfulfilled_cols + forecast_cols]
+
+    # 组合：基础列 + 安全库存 + 未交订单 + 预测 + 其他
+    new_order = base_cols + safe_cols + unfulfilled_cols + forecast_cols + other_cols
+    return df[new_order]
+
+
+
+
+
+
+
+
+
+
 
 def mark_unmatched_keys_on_sheet(ws, unmatched_keys, wafer_col=1, spec_col=2, name_col=3):
     """
@@ -192,127 +364,3 @@ def mark_keys_on_sheet(ws, key_set, key_cols=(1, 2, 3)):
                 ws.cell(row=row, column=col).fill = yellow_fill
         # else:
             # st.write(f"❌ 第 {row} 行未匹配: {display_key}")
-
-def merge_duplicate_product_names(summary_df: pd.DataFrame) -> pd.DataFrame:
-    """
-    合并 '汇总' 表中重复的品名（按品名分组），选用第一行的 晶圆品名 和 规格，合并其数值列。
-    """
-    # 确保必要列存在
-    required_cols = ["晶圆品名", "规格", "品名"]
-    for col in required_cols:
-        if col not in summary_df.columns:
-            raise ValueError(f"缺少必要列：{col}")
-
-    # 识别数值列（排除主键列）
-    value_cols = [col for col in summary_df.columns if col not in required_cols]
-
-    # 分组合并数值列
-    grouped = summary_df.groupby("品名", sort=False)
-
-    merged_rows = []
-
-    for name, group in grouped:
-        if len(group) == 1:
-            merged_rows.append(group.iloc[0])
-        else:
-            # 取第一行的 晶圆品名 和 规格
-            base_row = group.iloc[0][required_cols].copy()
-            summed_values = group[value_cols].apply(pd.to_numeric, errors="coerce").fillna(0).sum()
-            merged_row = pd.concat([base_row, summed_values])
-            merged_rows.append(merged_row)
-
-    # 合并所有结果
-    merged_df = pd.DataFrame(merged_rows)
-
-    # 保证列顺序与原始一致
-    return merged_df[summary_df.columns]
-    
-
-def clean_key_fields(df, field_map):
-    for col in [field_map["规格"], field_map["品名"], field_map["晶圆品名"]]:
-        df[col] = (
-            df[col]
-            .astype(str)
-            .str.replace(r"\s+", "", regex=True)  # 移除所有空白字符（含空格、全角空格、Tab、换行）
-            .str.replace(r"[\u200b\u200e\u200f]", "", regex=True)  # 清除不可见字符
-            .str.strip()
-        )
-    return df
-
-
-def merge_duplicate_rows_by_key(df: pd.DataFrame, field_map: dict, verbose=True) -> pd.DataFrame:
-    """
-    合并给定表格中 '规格' + '品名' + '晶圆品名' 相同的行：
-    - 数值列求和
-    - 其他字段取第一行
-    - 主键字段来自 field_map
-
-    增加 verbose 输出用于调试未合并成功的情况
-    """
-
-    key_cols = [field_map["规格"], field_map["品名"], field_map["晶圆品名"]]
-
-    for col in key_cols:
-        if col not in df.columns:
-            raise ValueError(f"缺少必要列：{col}")
-
-    # 主键列清洗
-    for col in key_cols:
-        df[col] = (
-            df[col]
-            .astype(str)
-            .str.strip()
-            .str.replace(r"\s+", "", regex=True)
-            .str.replace(r"[\u200b\u200e\u200f\n\r]", "", regex=True)
-        )
-
-    # 调试输出重复主键组合
-    dup_keys = df.groupby(key_cols).size().reset_index(name="count")
-    dup_keys = dup_keys[dup_keys["count"] > 1]
-
-    if verbose and not dup_keys.empty:
-        st.warning(f"⚠️ 检测到 {len(dup_keys)} 个重复主键组合，准备合并：")
-        for idx, row in dup_keys.iterrows():
-            key_values = tuple(row[col] for col in key_cols)
-            st.write(f"🔁 主键组：{key_values}")
-            st.dataframe(df[
-                (df[key_cols[0]] == key_values[0]) &
-                (df[key_cols[1]] == key_values[1]) &
-                (df[key_cols[2]] == key_values[2])
-            ])
-
-    # 数值列合并
-    value_cols = [col for col in df.columns if col not in key_cols and pd.api.types.is_numeric_dtype(df[col])]
-    grouped = df.groupby(key_cols, sort=False)
-    merged_rows = []
-
-    for keys, group in grouped:
-        if len(group) == 1:
-            merged_rows.append(group.iloc[0])
-        else:
-            base_row = group.iloc[0][df.columns.difference(value_cols)].copy()
-            summed_values = group[value_cols].apply(pd.to_numeric, errors="coerce").fillna(0).sum()
-            merged_row = pd.concat([base_row, summed_values])
-            merged_rows.append(merged_row)
-
-    merged_df = pd.DataFrame(merged_rows)
-
-    # 保持列顺序一致
-    return merged_df[df.columns]
-
-
-# 💡 自动按模块排序汇总列：安全库存 → 未交订单 → 预测 → 其他
-def reorder_summary_columns(df):
-    col_list = df.columns.tolist()
-
-    # 区分模块
-    safe_cols = [col for col in col_list if "Inv" in col]
-    unfulfilled_cols = [col for col in col_list if "未交订单" in col or col == "总未交订单"]
-    forecast_cols = [col for col in col_list if "预测" in col]
-    base_cols = ["晶圆品名", "规格", "品名"]
-    other_cols = [col for col in col_list if col not in base_cols + safe_cols + unfulfilled_cols + forecast_cols]
-
-    # 组合：基础列 + 安全库存 + 未交订单 + 预测 + 其他
-    new_order = base_cols + safe_cols + unfulfilled_cols + forecast_cols + other_cols
-    return df[new_order]
-
