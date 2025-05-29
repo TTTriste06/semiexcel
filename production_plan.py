@@ -184,17 +184,11 @@ def calculate_first_month_plan(df_plan: pd.DataFrame, summary_df: pd.DataFrame, 
     # ✅ clip 保底 + 转 int
     plan = plan.clip(lower=0).round().astype(int)
 
-    # ✅ 在 df_plan 中查找第一个包含“成品投单计划”的列名
-    col_target = None
-    for col in df_plan.columns:
-        if "成品投单计划" in col:
-            col_target = col
-            break
-    
-    if col_target:
-        df_plan[col_target] = plan
+    # ✅ 强制写入 df_plan 的第 8 列（H列）
+    if df_plan.shape[1] >= 8:
+        df_plan.iloc[:, 7] = plan  # 第 8 列是 index 7，对应 H 列
     else:
-        raise ValueError("❌ df_plan 中未找到包含 '成品投单计划' 的列，无法填入")
+        raise ValueError("❌ df_plan 的列数不足 8 列，无法写入 H 列（成品投单计划）")
 
 
 
