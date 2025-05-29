@@ -299,7 +299,12 @@ class PivotProcessor:
                     df_plan["PC"] = ""
                     df_plan["安全库存"] = ""
 
-                    
+                    # ✅ 从 summary_preview 填入 “ InvPart”
+                    invpart_lookup = summary_preview[["晶圆品名", "规格", "品名", " InvPart"]].copy()
+                    invpart_lookup = invpart_lookup.rename(columns={" InvPart": "安全库存_填入"})
+                    df_plan = df_plan.merge(invpart_lookup, on=["晶圆品名", "规格", "品名"], how="left")
+                    df_plan["安全库存"] = df_plan["安全库存_填入"].fillna("")
+                    df_plan.drop(columns=["安全库存_填入"], inplace=True)
 
 
                     sheet_name = "产品生产计划"
