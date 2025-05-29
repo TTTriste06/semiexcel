@@ -41,7 +41,8 @@ from append_summary import append_forecast_unmatched_to_summary_by_keys
 from production_plan import (
     add_colored_monthly_plan_headers,
     calculate_first_month_plan,
-    generate_monthly_plan_columns_range
+    generate_monthly_plan_columns_range,
+    highlight_plan_column
 )
 
 
@@ -338,7 +339,8 @@ class PivotProcessor:
 
                     # 4. 现在 header 已写好，可以安全写入 df_plan 中的值
                     
-                    
+                    highlight_plan_column(ws)
+
                     # 5. 列宽自动调整（用于计划表所有列）
                     adjust_column_width(writer, sheet_name, df_plan)
 
