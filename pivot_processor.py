@@ -8,6 +8,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl import load_workbook
+from dateutil.relativedelta import relativedelta
 from config import CONFIG
 from excel_utils import (
     adjust_column_width,
