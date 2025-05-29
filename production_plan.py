@@ -116,7 +116,7 @@ def calculate_first_month_plan(df_plan: pd.DataFrame, summary_df: pd.DataFrame, 
     col_finished_1 = "数量_成品仓"
     col_finished_2 = "数量_HOLD仓"
     col_in_progress = "成品在制"
-    col_target = f"{month1_str}_成品投单计划"
+    
 
     # ✅ 保证字段存在
     needed_columns = [col_forecast_1, col_order_1, col_forecast_2, col_order_2,
@@ -145,7 +145,16 @@ def calculate_first_month_plan(df_plan: pd.DataFrame, summary_df: pd.DataFrame, 
     # ✅ clip 保底 + 转 int
     plan = plan.clip(lower=0).round().astype(int)
 
-    # ✅ 写入 df_plan
-    df_plan[col_target] = plan
+    col_target = None
+    for col in df_plan.columns:
+        if col.startswith(f"{month1_str}_") and "成品投单计划" in col:
+            col_target = col
+            break
+    
+    if col_target:
+        df_plan[col_target] = plan
+    else:
+        raise ValueError(f"❌ 未在 df_plan 中找到 '{month1_str}_成品投单计划' 对应列，无法写入")
+
 
     return df_plan
