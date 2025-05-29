@@ -87,7 +87,7 @@ def add_colored_monthly_plan_headers(ws, start_col: int, start_date: datetime, p
     end_date = max_month if max_month else start_date + relativedelta(months=6)
 
     # ✅ 开始写入月份组表头
-    current_col = start_col
+    current_col = start_col - 1
     month_index = 0
     while start_date <= end_date:
         fill_color = PatternFill("solid", fgColor=month_colors[month_index % len(month_colors)])
@@ -141,8 +141,6 @@ def calculate_first_month_plan(df_plan: pd.DataFrame, summary_df: pd.DataFrame, 
     计算第一个月的“成品投单计划”列，考虑安全库存 + max(预测, 订单) + ... - 库存 - 在制
     """
 
-    import pandas as pd
-    from dateutil.relativedelta import relativedelta
 
     # 🔁 构造字段名
     month1_str = first_month.strftime("%Y年%m月")
