@@ -119,6 +119,8 @@ def append_forecast_to_summary(summary_df, forecast_df):
     # st.write(forecast_keys)
     unmatched_keys = [key for key in forecast_keys if key not in summary_keys]
 
+    st.write(forecast_df)
+    
     # 合并
     merged = summary_df.merge(forecast_df, on="品名", how="left")
     return merged, unmatched_keys
