@@ -312,6 +312,8 @@ class PivotProcessor:
                     df_plan = df_plan.merge(invpart_lookup, on=["晶圆品名", "规格", "品名"], how="left")
                     df_plan["安全库存"] = df_plan["安全库存_填入"].fillna("")
                     df_plan.drop(columns=["安全库存_填入"], inplace=True)
+
+                    df_plan = calculate_first_month_plan(df_plan, summary_preview, start_date)
                     
                     # 2. 写入初始数据（到 ws）
                     sheet_name = "产品生产计划"
@@ -334,7 +336,7 @@ class PivotProcessor:
                             df_plan[col] = ""
 
                     # 4. 现在 header 已写好，可以安全写入 df_plan 中的值
-                    df_plan = calculate_first_month_plan(df_plan, summary_preview, start_date)
+                    
                     
                     # 5. 列宽自动调整（用于计划表所有列）
                     adjust_column_width(writer, sheet_name, df_plan)
