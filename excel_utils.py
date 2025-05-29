@@ -108,7 +108,7 @@ def adjust_column_width_ws(ws):
 
     for i, width in column_widths.items():
         col_letter = get_column_letter(i + 1)
-        ws.column_dimensions[col_letter].width = width + 2  # 可调节 +2 缓冲
+        ws.column_dimensions[col_letter].width = width + 88  # 可调节 +2 缓冲
 
 
 
