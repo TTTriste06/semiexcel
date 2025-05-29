@@ -1,8 +1,10 @@
+import re
 from openpyxl.styles import PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
-import re
+from excel_utils import adjust_column_width
+
 
 def add_colored_monthly_plan_headers(ws, start_col: int, start_date: datetime, pivot_unfulfilled) -> int:
     """
@@ -20,15 +22,14 @@ def add_colored_monthly_plan_headers(ws, start_col: int, start_date: datetime, p
 
     # ✅ 每月字段列名
     monthly_fields = [
-        "成品投单计划", "投单计划调整", "半成品投弹计划",
+        "成品投单计划", "投单计划调整", "半成品投单计划",
         "成品可行投单", "半成品可行投单", "成品实际投单",
         "回货计划", "回货实际"
     ]
 
     # ✅ 每月对应背景色（12个以内自动轮换）
     month_colors = [
-        "FFFACD", "E0FFFF", "F0FFF0", "FFE4E1", "E6E6FA", "FFF0F5",
-        "F5FFFA", "F0FFFF", "FAFAD2", "D3D3D3", "F5F5DC", "F0E68C"
+        "FFFF00", "32CD32", "9932CC", "FFB6C1", "FFA500", "87CEFA"
     ]
 
     # ✅ 提取最大月份（从未交订单列名中解析）
@@ -70,5 +71,8 @@ def add_colored_monthly_plan_headers(ws, start_col: int, start_date: datetime, p
         current_col += len(monthly_fields)
         start_date += relativedelta(months=1)
         month_index += 1
+
+    # ✅ 自动调整新列区域的列宽
+    adjust_column_width(ws, ws.title)
 
     return current_col  # 返回最后写入的列号
