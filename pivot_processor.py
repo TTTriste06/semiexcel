@@ -40,7 +40,8 @@ from summary import (
 from append_summary import append_forecast_unmatched_to_summary_by_keys
 from production_plan import (
     add_colored_monthly_plan_headers,
-    calculate_first_month_plan
+    calculate_first_month_plan,
+    generate_monthly_plan_columns_range
 )
 
 
@@ -305,33 +306,39 @@ class PivotProcessor:
                     df_plan["PC"] = ""
                     df_plan["安全库存"] = ""
 
-                    # ✅ 从 summary_preview 填入 “ InvPart”
+                    # 1. 从 summary_preview 填入 “ InvPart”
                     invpart_lookup = summary_preview[["晶圆品名", "规格", "品名", " InvPart"]].copy()
                     invpart_lookup = invpart_lookup.rename(columns={" InvPart": "安全库存_填入"})
                     df_plan = df_plan.merge(invpart_lookup, on=["晶圆品名", "规格", "品名"], how="left")
                     df_plan["安全库存"] = df_plan["安全库存_填入"].fillna("")
                     df_plan.drop(columns=["安全库存_填入"], inplace=True)
-
-                    # 投单计划
-                    df_plan = calculate_first_month_plan(df_plan, summary_preview, start_date)
-
-
                     
+                    # 2. 写入初始数据（到 ws）
                     sheet_name = "产品生产计划"
-                    # 创建空 sheet
                     wb = writer.book
                     ws = wb.create_sheet(title=sheet_name)
-            
-                    # 手动从第 2 行写入表头与数据
                     for r_idx, row in enumerate(dataframe_to_rows(df_plan, index=False, header=True), start=2):
                         for c_idx, value in enumerate(row, start=1):
                             ws.cell(row=r_idx, column=c_idx, value=value)
-
+                    
+                    # 3. 写入月份扩展列（header 在 Excel 上，但我们不在 df_plan 中插入内容）
                     start_col = ws.max_column + 1
                     add_colored_monthly_plan_headers(ws, start_col=start_col, start_date=start_date, pivot_unfulfilled=pivot_unfulfilled)
 
+                    # 🧠 自动生成所有需要的列名（从 start_date 到最大订单月）
+                    monthly_columns = generate_monthly_plan_columns_range(start_date, pivot_unfulfilled)
+                    
+                    # ✅ 把这些列加到 df_plan 中
+                    for col in monthly_columns:
+                        if col not in df_plan.columns:
+                            df_plan[col] = ""
 
+                    # 4. 现在 header 已写好，可以安全写入 df_plan 中的值
+                    df_plan = calculate_first_month_plan(df_plan, summary_preview, start_date)
+                    
+                    # 5. 列宽自动调整（用于计划表所有列）
                     adjust_column_width(writer, sheet_name, df_plan)
+
 
 
             
