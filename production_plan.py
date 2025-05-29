@@ -114,7 +114,6 @@ def calculate_first_month_plan(df_plan: pd.DataFrame, summary_df: pd.DataFrame, 
     col_order_2 = f"{month2_str}未交订单数量"
     col_inv = " InvPart"
     col_finished_1 = "数量_成品仓"
-    col_finished_2 = "数量_HOLD仓"
     col_in_progress = "成品在制"
     
 
