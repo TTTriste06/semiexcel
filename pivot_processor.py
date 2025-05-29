@@ -38,12 +38,6 @@ from summary import (
     append_product_in_progress
 )
 from append_summary import append_forecast_unmatched_to_summary_by_keys
-from production_plan import (
-    add_colored_monthly_plan_headers,
-    calculate_first_month_plan,
-    generate_monthly_plan_columns_range,
-    highlight_plan_column
-)
 
 
 FIELD_MAPPINGS = {
@@ -292,68 +286,6 @@ class PivotProcessor:
                 st.success("✅ 已完成未匹配项标记")
             except Exception as e:
                 st.warning(f"⚠️ 未匹配标记失败：{e}")
-
-
-
-            # ✅ 创建“产品生产计划”表，写入从第 2 行开始
-            try:
-                if not summary_preview.empty:
-
-                    start_date = CONFIG.get("selected_plan_month", datetime.today())
-
-                    df_plan = summary_preview[["晶圆品名", "规格", "品名"]].copy()
-                    df_plan["封装形式"] = ""
-                    df_plan["供应商"] = ""
-                    df_plan["PC"] = ""
-                    df_plan["安全库存"] = ""
-                    df_plan[" "] = ""
-
-                    # 1. 从 summary_preview 填入 “ InvPart”
-                    invpart_lookup = summary_preview[["晶圆品名", "规格", "品名", " InvPart"]].copy()
-                    invpart_lookup = invpart_lookup.rename(columns={" InvPart": "安全库存_填入"})
-                    df_plan = df_plan.merge(invpart_lookup, on=["晶圆品名", "规格", "品名"], how="left")
-                    df_plan["安全库存"] = df_plan["安全库存_填入"].fillna("")
-                    df_plan.drop(columns=["安全库存_填入"], inplace=True)
-
-                    df_plan = calculate_first_month_plan(df_plan, summary_preview, start_date)
-                    
-                    # 2. 写入初始数据（到 ws）
-                    sheet_name = "产品生产计划"
-                    wb = writer.book
-                    ws = wb.create_sheet(title=sheet_name)
-                    for r_idx, row in enumerate(dataframe_to_rows(df_plan, index=False, header=True), start=2):
-                        for c_idx, value in enumerate(row, start=1):
-                            ws.cell(row=r_idx, column=c_idx, value=value)
-                    
-                    # 3. 写入月份扩展列（header 在 Excel 上，但我们不在 df_plan 中插入内容）
-                    start_col = ws.max_column + 1
-                    add_colored_monthly_plan_headers(ws, start_col=start_col, start_date=start_date, pivot_unfulfilled=pivot_unfulfilled)
-
-                    # 🧠 自动生成所有需要的列名（从 start_date 到最大订单月）
-                    monthly_columns = generate_monthly_plan_columns_range(start_date, pivot_unfulfilled)
-                    
-                    # ✅ 把这些列加到 df_plan 中
-                    for col in monthly_columns:
-                        if col not in df_plan.columns:
-                            df_plan[col] = ""
-
-                    # 4. 现在 header 已写好，可以安全写入 df_plan 中的值
-                    
-                    highlight_plan_column(ws)
-
-                    # 5. 列宽自动调整（用于计划表所有列）
-                    adjust_column_width(writer, sheet_name, df_plan)
-
-
-
-            
-                    # 设置自动筛选，从 A2 开始
-                    ws.auto_filter.ref = f"A2:{get_column_letter(ws.max_column)}2"
-            
-                    st.success("✅ 产品生产计划表写入成功，表头从第 2 行开始")
-            except Exception as e:
-                st.warning(f"⚠️ 创建产品生产计划 Sheet 失败：{e}")
-
 
 
 
