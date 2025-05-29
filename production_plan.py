@@ -145,16 +145,17 @@ def calculate_first_month_plan(df_plan: pd.DataFrame, summary_df: pd.DataFrame, 
     # ✅ clip 保底 + 转 int
     plan = plan.clip(lower=0).round().astype(int)
 
+    # ✅ 查找 df_plan 中列名为“成品投单计划”的列
     col_target = None
     for col in df_plan.columns:
-        if col.startswith(f"{month1_str}_") and "成品投单计划" in col:
+        if col.strip() == "成品投单计划":
             col_target = col
             break
     
     if col_target:
         df_plan[col_target] = plan
     else:
-        raise ValueError(f"❌ 未在 df_plan 中找到 '{month1_str}_成品投单计划' 对应列，无法写入")
+        raise ValueError("❌ 未在 df_plan 中找到列名为 '成品投单计划' 的列，无法写入")
 
 
     return df_plan
