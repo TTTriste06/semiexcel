@@ -305,6 +305,7 @@ class PivotProcessor:
                     df_plan["供应商"] = ""
                     df_plan["PC"] = ""
                     df_plan["安全库存"] = ""
+                    df_plan[" "] = ""
 
                     # 1. 从 summary_preview 填入 “ InvPart”
                     invpart_lookup = summary_preview[["晶圆品名", "规格", "品名", " InvPart"]].copy()
