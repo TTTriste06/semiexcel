@@ -38,7 +38,7 @@ from summary import (
     append_product_in_progress
 )
 from append_summary import append_forecast_unmatched_to_summary_by_keys
-from production_plan import add_colored_monthly_plan_headers
+from production_plan import add_colored_monthly_plan_headers, calculate_first_month_plan
 
 
 FIELD_MAPPINGS = {
@@ -306,6 +306,8 @@ class PivotProcessor:
                     df_plan["安全库存"] = df_plan["安全库存_填入"].fillna("")
                     df_plan.drop(columns=["安全库存_填入"], inplace=True)
 
+                    df_plan = calculate_first_month_plan(df_plan, summary_preview, start_date)
+
 
                     sheet_name = "产品生产计划"
                     # 创建空 sheet
@@ -323,6 +325,8 @@ class PivotProcessor:
 
 
                     adjust_column_width(writer, sheet_name, df_plan)
+
+
             
                     # 设置自动筛选，从 A2 开始
                     ws.auto_filter.ref = f"A2:{get_column_letter(ws.max_column)}2"
