@@ -85,14 +85,6 @@ def append_unfulfilled_summary_columns(summary_df, pivoted_df):
 def append_forecast_to_summary(summary_df, forecast_df):
     """
     从预测表中提取与 summary_df 匹配的预测记录（仅按品名匹配），并返回未匹配的品名列表。
-
-    参数:
-    - summary_df: 汇总表（含“品名”列）
-    - forecast_df: 原始预测表
-
-    返回:
-    - merged: 合并后的 summary_df
-    - unmatched_keys: list of 品名 未被匹配的条目
     """
 
     # 重命名以统一列名
@@ -100,32 +92,24 @@ def append_forecast_to_summary(summary_df, forecast_df):
         "生产料号": "品名"
     })
 
-    # 使用的唯一主键
-    key_col = ["品名"]
-
     # 提取预测月份列
     month_cols = [col for col in forecast_df.columns if isinstance(col, str) and "预测" in col]
     if not month_cols:
         st.warning("⚠️ 没有识别到任何预测列，请检查列名是否包含'预测'")
         return summary_df, []
 
-    # 去重，保留每个品名第一条记录
-    # forecast_df = forecast_df[key_col + month_cols].drop_duplicates(subset=key_col)
+    # ⚠️ 仅保留 品名 和预测列，避免将多余字段合并到 summary
+    forecast_df = forecast_df[["品名"] + month_cols]
 
     # 查找未匹配的品名
     summary_keys = set(summary_df["品名"].dropna().astype(str).str.strip())
-    # st.write(forecast_df["品名"])
     forecast_keys = forecast_df["品名"].dropna().astype(str).str.strip()
-    # st.write(forecast_keys)
     unmatched_keys = [key for key in forecast_keys if key not in summary_keys]
 
-
-    st.write("预测增加")
-    st.write(forecast_df)
-    
     # 合并
     merged = summary_df.merge(forecast_df, on="品名", how="left")
     return merged, unmatched_keys
+
     
 
 
