@@ -194,7 +194,60 @@ def calculate_first_month_plan(df_plan: pd.DataFrame, summary_df: pd.DataFrame, 
         df_plan.iloc[:, 7] = plan  # 第 8 列是 index 7，对应 H 列
     else:
         raise ValueError("❌ df_plan 的列数不足 8 列，无法写入 H 列（成品投单计划）")
-
-
-
     return df_plan
+
+
+
+def highlight_plan_column(ws, safe_col_name="安全库存", plan_col_name="成品投单计划", header_row=2):
+    """
+    给“成品投单计划”列应用条件着色：
+    - 红色：值 < 0
+    - 黄色：0 ≤ 值 < 安全库存
+    - 橙色：值 > 2 × 安全库存
+
+    参数：
+    - ws: openpyxl Worksheet 对象
+    - safe_col_name: 安全库存列名
+    - plan_col_name: 成品投单计划列名
+    - header_row: 表头所在行（默认第 2 行）
+    """
+    # ✅ 查找列索引
+    def find_col_index(col_name):
+        for col in range(1, ws.max_column + 1):
+            val = str(ws.cell(row=header_row, column=col).value).strip()
+            if val == col_name:
+                return col
+        return None
+
+    col_safe = find_col_index(safe_col_name)
+    col_plan = find_col_index(plan_col_name)
+
+    if col_safe is None or col_plan is None:
+        raise ValueError(f"❌ 找不到 '{safe_col_name}' 或 '{plan_col_name}' 列")
+
+    # ✅ 设置填充颜色
+    red_fill = PatternFill(fill_type="solid", fgColor="FF0000")
+    yellow_fill = PatternFill(fill_type="solid", fgColor="FFFF00")
+    orange_fill = PatternFill(fill_type="solid", fgColor="FFA500")
+
+    # ✅ 从 header_row + 1 开始逐行处理
+    for row in range(header_row + 1, ws.max_row + 1):
+        try:
+            val_plan = ws.cell(row=row, column=col_plan).value
+            val_safe = ws.cell(row=row, column=col_safe).value
+            val_plan = float(val_plan) if val_plan not in [None, ""] else 0
+            val_safe = float(val_safe) if val_safe not in [None, ""] else 0
+
+            cell = ws.cell(row=row, column=col_plan)
+
+            if val_plan < 0:
+                cell.fill = red_fill
+            elif val_plan < val_safe:
+                cell.fill = yellow_fill
+            elif val_plan > 2 * val_safe:
+                cell.fill = orange_fill
+
+        except Exception as e:
+            # 跳过不能转换的行
+            continue
+
