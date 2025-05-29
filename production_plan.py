@@ -7,6 +7,46 @@ from datetime import datetime
 from excel_utils import adjust_column_width_ws
 from openpyxl.styles import Border, Side
 
+def generate_monthly_plan_columns_range(start_date: datetime, pivot_unfulfilled: pd.DataFrame) -> list:
+    """
+    根据起始月份和未交订单最大月份，生成所有月份字段（多组列名）。
+
+    返回：
+    - List[str]: 所有列名，如 "2025年06月_成品投单计划"
+    """
+    from dateutil.relativedelta import relativedelta
+    import re
+
+    monthly_fields = [
+        "成品投单计划", "投单计划调整", "半成品投弹计划",
+        "成品可行投单", "半成品可行投单", "成品实际投单",
+        "回货计划", "回货实际"
+    ]
+
+    # 提取最大月份字段
+    month_pattern = re.compile(r"(\d{4})年(\d{1,2})月.*未交订单数量")
+    max_month = None
+    for col in pivot_unfulfilled.columns:
+        match = month_pattern.match(col)
+        if match:
+            year, month = int(match.group(1)), int(match.group(2))
+            dt = datetime(year, month, 1)
+            if not max_month or dt > max_month:
+                max_month = dt
+
+    end_date = max_month if max_month else start_date + relativedelta(months=6)
+
+    # 生成每个月份的列名
+    current = start_date
+    columns = []
+    while current <= end_date:
+        prefix = current.strftime("%Y年%m月")
+        columns += [f"{prefix}_{field}" for field in monthly_fields]
+        current += relativedelta(months=1)
+
+    return columns
+
+
 
 def add_colored_monthly_plan_headers(ws, start_col: int, start_date: datetime, pivot_unfulfilled) -> int:
     """
