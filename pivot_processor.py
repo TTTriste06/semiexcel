@@ -309,6 +309,8 @@ class PivotProcessor:
                     df_plan["安全库存"] = df_plan["安全库存_填入"].fillna("")
                     df_plan.drop(columns=["安全库存_填入"], inplace=True)
 
+                    start_date = CONFIG.get("selected_plan_month", datetime.today())
+
                     df_plan = calculate_first_month_plan(df_plan, summary_preview, start_date)
 
 
@@ -322,7 +324,6 @@ class PivotProcessor:
                         for c_idx, value in enumerate(row, start=1):
                             ws.cell(row=r_idx, column=c_idx, value=value)
 
-                    start_date = CONFIG.get("selected_plan_month", datetime.today())
                     start_col = ws.max_column + 1
                     add_colored_monthly_plan_headers(ws, start_col=start_col, start_date=start_date, pivot_unfulfilled=pivot_unfulfilled)
 
