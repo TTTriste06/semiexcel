@@ -145,17 +145,16 @@ def calculate_first_month_plan(df_plan: pd.DataFrame, summary_df: pd.DataFrame, 
     # ✅ clip 保底 + 转 int
     plan = plan.clip(lower=0).round().astype(int)
 
-    # ✅ 查找 df_plan 中列名为“成品投单计划”的列
-    col_target = None
-    for col in df_plan.columns:
-        if col.strip() == "成品投单计划":
-            col_target = col
-            break
+    # ✅ 在 df_plan 中找到“安全库存”列之后的下一列名
+    if "安全库存" not in df_plan.columns:
+        raise ValueError("❌ df_plan 中找不到 '安全库存' 列")
     
-    if col_target:
-        df_plan[col_target] = plan
-    else:
-        raise ValueError("❌ 未在 df_plan 中找到列名为 '成品投单计划' 的列，无法写入")
+    col_index = df_plan.columns.get_loc("安全库存") + 1
+    if col_index >= len(df_plan.columns):
+        raise ValueError("❌ '安全库存' 后没有可以填入的列")
+    
+    col_target = df_plan.columns[col_index]
+    df_plan[col_target] = plan
 
 
     return df_plan
