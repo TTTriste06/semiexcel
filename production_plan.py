@@ -3,7 +3,7 @@ from openpyxl.styles import PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
-from excel_utils import adjust_column_width
+from excel_utils import adjust_column_width_ws
 
 
 def add_colored_monthly_plan_headers(ws, start_col: int, start_date: datetime, pivot_unfulfilled) -> int:
@@ -73,6 +73,6 @@ def add_colored_monthly_plan_headers(ws, start_col: int, start_date: datetime, p
         month_index += 1
 
     # ✅ 自动调整新列区域的列宽
-    adjust_column_width(ws, ws.title)
+    adjust_column_width_ws(ws)
 
     return current_col  # 返回最后写入的列号
