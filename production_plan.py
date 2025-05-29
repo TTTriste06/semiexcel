@@ -30,7 +30,7 @@ def add_colored_monthly_plan_headers(ws, start_col: int, start_date: datetime, p
 
     # ✅ 每月对应背景色（12个以内自动轮换）
     month_colors = [
-        "FFFF00", "ADFF2F", "9932CC", "FFB6C1", "FFA500", "87CEFA"
+        "FFFACD", "FFDAB9", "FFE4E1", "87CEFA", "D8BFD8", "FFC0CB"
     ]
 
     # ✅ 提取最大月份（从未交订单列名中解析）
