@@ -20,13 +20,7 @@ def get_uploaded_files():
     # 📅 手动输入历史截止月份
     manual_month = st.text_input("📅 输入历史数据截止月份（格式: YYYY-MM，可留空表示不筛选）")
     CONFIG["selected_month"] = manual_month.strip() if manual_month.strip() else None
-
-    # 📆 计划起始月份
-    today = date.today()
-    month_options = pd.date_range(start=today - relativedelta(months=12), end=today + relativedelta(months=6), freq="MS")
-    selected_month = st.selectbox("📆 请选择排产计划起始月份", month_options, format_func=lambda x: x.strftime("%Y年%m月"))
-    CONFIG["selected_plan_month"] = selected_month
-
+    
     # 📂 上传主要文件
     uploaded_files = st.file_uploader(
         "📂 上传 5 个核心 Excel 文件（未交订单/成品在制/成品库存/晶圆库存/CP在制）",
