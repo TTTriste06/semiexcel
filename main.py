@@ -1,18 +1,9 @@
-import streamlit as st
-from io import BytesIO
-from datetime import datetime
-import pandas as pd
-from pivot_processor import PivotProcessor
-from ui import setup_sidebar, get_uploaded_files
-from github_utils import upload_to_github, download_from_github
-from urllib.parse import quote
-
 def main():
     st.set_page_config(page_title="Excel数据透视汇总工具", layout="wide")
     setup_sidebar()
 
-    # 获取上传文件
-    uploaded_files, forecast_file, safety_file, mapping_file, start = get_uploaded_files()
+    # 获取上传文件（包括新增的 3 个明细文件）
+    uploaded_files, forecast_file, safety_file, mapping_file, arrival_file, order_file, sales_file, start = get_uploaded_files()
 
     if start:
         if len(uploaded_files) < 5:
@@ -22,7 +13,10 @@ def main():
         github_files = {
             "赛卓-预测.xlsx": forecast_file,
             "赛卓-安全库存.xlsx": safety_file,
-            "赛卓-新旧料号.xlsx": mapping_file
+            "赛卓-新旧料号.xlsx": mapping_file,
+            "赛卓-到货明细.xlsx": arrival_file,
+            "赛卓-下单明细.xlsx": order_file,
+            "赛卓-销货明细.xlsx": sales_file
         }
 
         additional_sheets = {}
@@ -48,6 +42,9 @@ def main():
                 except FileNotFoundError:
                     st.warning(f"⚠️ 未提供且未在 GitHub 找到历史文件：{name}")
 
+        # 🔄 调试显示额外数据名
+        st.write("📘 额外数据已准备：", list(additional_sheets.keys()))
+
         # 生成 Excel 汇总
         buffer = BytesIO()
         processor = PivotProcessor()
@@ -62,7 +59,7 @@ def main():
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
-        # 🧾 在页面上预览 Excel 各个 sheet
+        # 🧾 预览生成的每个 sheet
         try:
             buffer.seek(0)
             with pd.ExcelFile(buffer, engine="openpyxl") as xls:
@@ -80,6 +77,3 @@ def main():
                             st.error(f"无法读取工作表 `{sheet_name}`: {e}")
         except Exception as e:
             st.warning(f"⚠️ 预览 Excel 报告失败：{e}")
-
-if __name__ == "__main__":
-    main()
