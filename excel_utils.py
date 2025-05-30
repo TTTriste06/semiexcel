@@ -230,7 +230,7 @@ def merge_duplicate_rows_by_key(df: pd.DataFrame, field_map: dict, verbose=True)
         st.warning(f"⚠️ 检测到 {len(dup_keys)} 个重复主键组合，准备合并：")
         for idx, row in dup_keys.iterrows():
             key_values = tuple(row[col] for col in key_cols)
-            st.write(f"🔁 主键组：{key_values}")
+            # st.write(f"🔁 主键组：{key_values}")
             st.dataframe(df[
                 (df[key_cols[0]] == key_values[0]) &
                 (df[key_cols[1]] == key_values[1]) &
