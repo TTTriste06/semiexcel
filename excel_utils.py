@@ -162,39 +162,19 @@ def get_column_index_by_name(ws, target_name: str, header_row: int = 1):
     return None
 
 
-def merge_duplicate_product_names(summary_df: pd.DataFrame) -> pd.DataFrame:
+def delete_duplicate_product_names(summary_df: pd.DataFrame) -> pd.DataFrame:
     """
-    合并 '汇总' 表中重复的品名（按品名分组），选用第一行的 晶圆品名 和 规格，合并其数值列。
+    删除 '汇总' 表中品名重复的行，仅保留每个品名的第一条记录。
     """
-    # 确保必要列存在
-    required_cols = ["晶圆品名", "规格", "品名"]
-    for col in required_cols:
-        if col not in summary_df.columns:
-            raise ValueError(f"缺少必要列：{col}")
+    if "品名" not in summary_df.columns:
+        raise ValueError("缺少必要列：品名")
 
-    # 识别数值列（排除主键列）
-    value_cols = [col for col in summary_df.columns if col not in required_cols]
+    # 仅保留每个品名的第一条记录
+    deduped_df = summary_df.drop_duplicates(subset="品名", keep="first")
 
-    # 分组合并数值列
-    grouped = summary_df.groupby("品名", sort=False)
+    # 返回结果，列顺序保持不变
+    return deduped_df[summary_df.columns]
 
-    merged_rows = []
-
-    for name, group in grouped:
-        if len(group) == 1:
-            merged_rows.append(group.iloc[0])
-        else:
-            # 取第一行的 晶圆品名 和 规格
-            base_row = group.iloc[0][required_cols].copy()
-            summed_values = group[value_cols].apply(pd.to_numeric, errors="coerce").fillna(0).sum()
-            merged_row = pd.concat([base_row, summed_values])
-            merged_rows.append(merged_row)
-
-    # 合并所有结果
-    merged_df = pd.DataFrame(merged_rows)
-
-    # 保证列顺序与原始一致
-    return merged_df[summary_df.columns]
 
 def merge_duplicate_rows_by_key(df: pd.DataFrame, field_map: dict, verbose=True) -> pd.DataFrame:
     """
