@@ -357,14 +357,19 @@ class PivotProcessor:
                 
                 # 初始化结果表
                 # 使用 summary_preview["品名"] 顺序构建 index（确保与主表一致，且所有品名都保留）
-                arrival_by_month = pd.DataFrame(index=summary_preview["品名"].astype(str))
+                df_arrival["到货月份"] = pd.to_datetime(df_arrival["到货日期"], errors="coerce").dt.month
+                df_arrival["品名"] = df_arrival["品名"].astype(str)
                 
-                for m in forecast_months:
-                    col_name = f"{m}月到货数量"
-                    arrival_by_month[col_name] = 0  # 初始化为 0
+                for idx, row in df_arrival.iterrows():
+                    part = row["品名"]
+                    qty = row["允收数量"]
+                    month = row["到货月份"]
+                    if month in forecast_months:
+                        col = f"{month}月到货数量"
+                        match_idx = arrival_by_month[arrival_by_month["品名"] == part].index
+                        if not match_idx.empty:
+                            arrival_by_month.loc[match_idx[0], col] += qty
                 
-                arrival_by_month.index.name = "品名"
-
 
                 st.write("4")
                 
