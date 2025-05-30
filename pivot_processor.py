@@ -207,6 +207,12 @@ class PivotProcessor:
                     st.success("✅ 已合并成品在制")
 
 
+                summary_preview = clean_df(summary_preview)
+                summary_preview = summary_preview.drop_duplicates(subset=["晶圆品名", "规格", "品名"]).reset_index(drop=True)
+                summary_preview = merge_duplicate_product_names(summary_preview)
+                summary_preview = reorder_summary_columns(summary_preview)
+
+
                 HEADER_TEMPLATE = [
                     "销售数量", "销售金额", "成品投单计划", "半成品投单计划", "投单计划周期",
                     "成品可行投单", "半成品可行投单", "成品实际投单", "半成品实际投单",
@@ -244,10 +250,6 @@ class PivotProcessor:
                 st.error(f"❌ 汇总数据合并失败: {e}")
                 return
 
-            summary_preview = clean_df(summary_preview)
-            summary_preview = summary_preview.drop_duplicates(subset=["晶圆品名", "规格", "品名"]).reset_index(drop=True)
-            summary_preview = merge_duplicate_product_names(summary_preview)
-            summary_preview = reorder_summary_columns(summary_preview)
             summary_preview.to_excel(writer, sheet_name="汇总", index=False)
             adjust_column_width(writer, "汇总", summary_preview)
 
