@@ -377,7 +377,7 @@ class PivotProcessor:
                 back_cols_in_summary = [col for col in summary_preview.columns if "回货实际" in col]
                 
 
-                # ✅ 将 df_plan 的列按顺序填入 summary_preview
+                # ✅ 按顺序填入 summary_preview
                 for i, col in enumerate(back_cols_in_summary):
                     summary_preview[col] = arrival_by_month.iloc[:, i+1]
             
@@ -385,7 +385,59 @@ class PivotProcessor:
 
 
 
+                # 销货数量和销货金额
+                # ✅ 提取销货明细原始数据
+                df_sales = additional_sheets.get("赛卓-销货明细", pd.DataFrame())
+                df_sales = df_sales[["交易日期", "品名", "数量", "原币金额"]].copy()
                 
+                # ✅ 清理：只保留出现在 summary_preview 中的品名
+                valid_names = set(summary_preview["品名"].astype(str))
+                df_sales["品名"] = df_sales["品名"].astype(str)
+                df_sales = df_sales[df_sales["品名"].isin(valid_names)]
+                
+                # ✅ 初始化两个结果表（以 summary_preview 的品名为基准，跳过 header 行）
+                sales_qty_by_month = pd.DataFrame()
+                sales_amt_by_month = pd.DataFrame()
+                sales_qty_by_month["品名"] = summary_preview.loc[1:, "品名"].astype(str).reset_index(drop=True)
+                sales_amt_by_month["品名"] = summary_preview.loc[1:, "品名"].astype(str).reset_index(drop=True)
+                
+                for m in forecast_months:
+                    col_qty = f"{m}月销售数量"
+                    col_amt = f"{m}月销售金额"
+                    sales_qty_by_month[col_qty] = 0
+                    sales_amt_by_month[col_amt] = 0
+                
+                # ✅ 提取月份
+                df_sales["销售月份"] = pd.to_datetime(df_sales["交易日期"], errors="coerce").dt.month
+                
+                # ✅ 累加销售数据
+                for idx, row in df_sales.iterrows():
+                    part = row["品名"]
+                    qty = row["数量"]
+                    amt = row["原币金额"]
+                    month = row["销售月份"]
+                    if month in forecast_months:
+                        col_qty = f"{month}月销售数量"
+                        col_amt = f"{month}月销售金额"
+                        match_idx = sales_qty_by_month[sales_qty_by_month["品名"] == part].index
+                        if not match_idx.empty:
+                            sales_qty_by_month.loc[match_idx[0], col_qty] += qty
+                            sales_amt_by_month.loc[match_idx[0], col_amt] += amt
+                
+                # ✅ 写入汇总表 summary_preview（跳过 header）
+                sales_qty_cols_in_summary = [col for col in summary_preview.columns if "销售数量" in col]
+                sales_amt_cols_in_summary = [col for col in summary_preview.columns if "销售金额" in col]
+                
+                for i, col in enumerate(sales_qty_cols_in_summary):
+                    if i + 1 < sales_qty_by_month.shape[1]:
+                        summary_preview.loc[1:, col] = sales_qty_by_month.iloc[:, i + 1].values
+                
+                for i, col in enumerate(sales_amt_cols_in_summary):
+                    if i + 1 < sales_amt_by_month.shape[1]:
+                        summary_preview.loc[1:, col] = sales_amt_by_month.iloc[:, i + 1].values
+                
+                st.success("✅ 销售数量与销售金额已写入 summary_preview")
+
 
                 
                
