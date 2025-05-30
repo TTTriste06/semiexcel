@@ -336,30 +336,36 @@ class PivotProcessor:
 
 
         
-                # 提取原始数据
+                # ✅ 提取原始数据
                 df_arrival = additional_sheets.get("赛卓-到货明细", pd.DataFrame())
                 df_arrival = df_arrival[["到货日期", "品名", "允收数量"]].copy()
-
                 st.write("1")
                 
-                # 应用映射（你已有 apply_mapping_and_merge + apply_extended_substitute_mapping 函数）
+                # ✅ （可选映射）跳过暂不启用
                 # df_arrival, keys_main = apply_mapping_and_merge(df_arrival, mapping_df, FIELD_MAPPINGS["赛卓-到货明细"])
                 # df_arrival, _ = apply_extended_substitute_mapping(df_arrival, mapping_df, FIELD_MAPPINGS["赛卓-到货明细"], keys_main)
-
+                
                 st.write("2")
                 
-                # 清理：只保留汇总中存在的品名
+                # ✅ 清理：只保留汇总中存在的品名
                 valid_names = set(summary_preview["品名"].astype(str))
                 df_arrival["品名"] = df_arrival["品名"].astype(str)
                 df_arrival = df_arrival[df_arrival["品名"].isin(valid_names)]
-
                 st.write("3")
                 
-                # 初始化结果表
-                # 使用 summary_preview["品名"] 顺序构建 index（确保与主表一致，且所有品名都保留）
-                df_arrival["到货月份"] = pd.to_datetime(df_arrival["到货日期"], errors="coerce").dt.month
-                df_arrival["品名"] = df_arrival["品名"].astype(str)
+                # ✅ 初始化结果表，第一列来自 summary_preview 的品名（跳过第一行 header）
+                arrival_by_month = pd.DataFrame()
+                arrival_by_month["品名"] = summary_preview.loc[1:, "品名"].astype(str).reset_index(drop=True)
                 
+                for m in forecast_months:
+                    col_name = f"{m}月到货数量"
+                    arrival_by_month[col_name] = 0  # 初始化为 0
+                
+                # ✅ 计算每条记录的到货月份
+                df_arrival["到货月份"] = pd.to_datetime(df_arrival["到货日期"], errors="coerce").dt.month
+                st.write("4")
+                
+                # ✅ 遍历并累加到目标月份列中
                 for idx, row in df_arrival.iterrows():
                     part = row["品名"]
                     qty = row["允收数量"]
@@ -370,28 +376,11 @@ class PivotProcessor:
                         if not match_idx.empty:
                             arrival_by_month.loc[match_idx[0], col] += qty
                 
-
-                st.write("4")
-                
-                # 遍历记录
-                df_arrival["到货月份"] = pd.to_datetime(df_arrival["到货日期"], errors="coerce").dt.month
-
                 st.write("5")
                 
-                for idx, row in df_arrival.iterrows():
-                    part = row["品名"]
-                    qty = row["允收数量"]
-                    month = row["到货月份"]
-                    if month in forecast_months:
-                        col = f"{month}月到货数量"
-                        if part in arrival_by_month.index:
-                            arrival_by_month.loc[part, col] += qty
-                            
-                st.write("6")
-                
-                arrival_by_month.reset_index(inplace=True)
-                
+                # ✅ 输出结果
                 st.write(arrival_by_month)
+
                 
 
                 
