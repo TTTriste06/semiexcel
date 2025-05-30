@@ -326,8 +326,14 @@ class PivotProcessor:
                         df_semi_plan[col.replace("成品投单计划", "半成品投单计划")] = (
                             df_plan[col] - safe_col(summary_preview, "半成品在制")
                         )
+                    else:
+                        df_semi_plan[col.replace("成品投单计划", "半成品投单计划")] = (
+                            0
+                        )
 
                 st.write(df_semi_plan)
+
+               
      
 
 
@@ -341,14 +347,16 @@ class PivotProcessor:
 
 
 
-
+            ws = writer.sheets["汇总"]
 
             semi_plan_cols_in_summary = [col for col in summary_preview.columns if "半成品投单计划" in col]
-            ws = writer.sheets["汇总"]
+
+            st.write(semi_plan_cols_in_summary)
             
             for i, col in enumerate(semi_plan_cols_in_summary):
                 col_idx = summary_preview.columns.get_loc(col) + 1  # 1-based Excel column index
                 col_letter = get_column_letter(col_idx)
+                st.write(i,col,col_idx,col_letter)
             
                 for row in range(3, len(summary_preview) + 3):  # 数据从第3行开始
                     cell = ws.cell(row=row, column=col_idx)
