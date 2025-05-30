@@ -297,6 +297,21 @@ class PivotProcessor:
                     st.write(df_plan)
 
 
+                    # ✅ 第一步：找到 summary_preview 中所有包含“成品投单计划”的列
+                    plan_cols_in_summary = [col for col in summary_preview.columns if "成品投单计划" in col]
+                    
+                    # ✅ 第二步：确保 df_plan 列与之数量一致
+                    if len(plan_cols_in_summary) != df_plan.shape[1]:
+                        st.error(f"❌ 成品投单计划列数不一致：df_plan 有 {df_plan.shape[1]} 列，汇总中有 {len(plan_cols_in_summary)} 列")
+                    else:
+                        # ✅ 第三步：按顺序将 df_plan 中的列值写入 summary_preview
+                        for i, col in enumerate(plan_cols_in_summary):
+                            summary_preview[col] = df_plan.iloc[:, i]
+                    
+                        st.success("✅ 成品投单计划已成功写入 summary_preview")
+
+
+
 
             except Exception as e:
                 st.error(f"❌ 汇总数据合并失败: {e}")
