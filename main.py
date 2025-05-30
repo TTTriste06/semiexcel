@@ -53,7 +53,7 @@ def main():
                     st.warning(f"⚠️ 未提供且未在 GitHub 找到历史文件：{name}")
 
         # 🔄 调试显示额外数据名
-        st.write("📘 额外数据已准备：", list(additional_sheets.keys()))
+        # st.write("📘 额外数据已准备：", list(additional_sheets.keys()))
 
         # 生成 Excel 汇总
         buffer = BytesIO()
