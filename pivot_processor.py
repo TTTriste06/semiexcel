@@ -343,8 +343,8 @@ class PivotProcessor:
                 st.write("1")
                 
                 # 应用映射（你已有 apply_mapping_and_merge + apply_extended_substitute_mapping 函数）
-                df_arrival, keys_main = apply_mapping_and_merge(df_arrival, mapping_df, FIELD_MAPPINGS["赛卓-到货明细"])
-                df_arrival, _ = apply_extended_substitute_mapping(df_arrival, mapping_df, FIELD_MAPPINGS["赛卓-到货明细"], keys_main)
+                # df_arrival, keys_main = apply_mapping_and_merge(df_arrival, mapping_df, FIELD_MAPPINGS["赛卓-到货明细"])
+                # df_arrival, _ = apply_extended_substitute_mapping(df_arrival, mapping_df, FIELD_MAPPINGS["赛卓-到货明细"], keys_main)
 
                 st.write("2")
                 
