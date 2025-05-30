@@ -439,6 +439,53 @@ class PivotProcessor:
                 st.success("✅ 销售数量与销售金额已写入 summary_preview")
 
 
+
+
+
+
+                # 成品实际投单
+                # ✅ 提取下单明细原始数据
+                df_order = additional_sheets.get("赛卓-下单明细", pd.DataFrame())
+                df_order = df_order[["下单日期", "回货明细_回货品名", "回货明细_回货数量"]].copy()
+                
+                # ✅ 清理：只保留 summary 中有的品名
+                valid_names = set(summary_preview["品名"].astype(str))
+                df_order["回货明细_回货品名"] = df_order["回货明细_回货品名"].astype(str)
+                df_order = df_order[df_order["回货明细_回货品名"].isin(valid_names)]
+                
+                # ✅ 初始化结果表
+                order_plan_by_month = pd.DataFrame()
+                order_plan_by_month["品名"] = summary_preview.loc[1:, "品名"].astype(str).reset_index(drop=True)
+                
+                for m in forecast_months:
+                    col_name = f"{m}月成品实际投单"
+                    order_plan_by_month[col_name] = 0
+                
+                # ✅ 提取月份
+                df_order["下单月份"] = pd.to_datetime(df_order["下单日期"], errors="coerce").dt.month
+                
+                # ✅ 累加每条记录的数量到对应月份
+                for idx, row in df_order.iterrows():
+                    part = row["回货明细_回货品名"]
+                    qty = row["回货明细_回货数量"]
+                    month = row["下单月份"]
+                    if month in forecast_months:
+                        col = f"{month}月成品实际投单"
+                        match_idx = order_plan_by_month[order_plan_by_month["品名"] == part].index
+                        if not match_idx.empty:
+                            order_plan_by_month.loc[match_idx[0], col] += qty
+                
+                # ✅ 找出 summary 中对应的列并填入
+                order_cols_in_summary = [col for col in summary_preview.columns if "成品实际投单" in col]
+                
+                for i, col in enumerate(order_cols_in_summary):
+                    if i + 1 < order_plan_by_month.shape[1]:
+                        summary_preview.loc[1:, col] = order_plan_by_month.iloc[:, i + 1].values
+                
+                st.success("✅ 成品实际投单已写入 summary_preview")
+
+
+
                 
                
      
