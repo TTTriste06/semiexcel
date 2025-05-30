@@ -251,30 +251,32 @@ class PivotProcessor:
             ws = writer.sheets["汇总"]
 
            
-            # 确定要合并的月份范围
+            # 预测月份范围
             month_pattern = re.compile(r"(\d{1,2})月预测")
             forecast_months = []
             for col in summary_preview.columns:
                 match = month_pattern.match(str(col))
                 if match:
                     forecast_months.append(int(match.group(1)))
-                    
+            
             start_month = datetime.today().month
             end_month = max(forecast_months) - 1 if forecast_months else start_month
             num_months = end_month - start_month + 1
-            
-            # 每月字段组大小
             group_size = 13
-            # 合并列的起始列索引（从 1 开始）
-            start_col = len(summary_preview.columns) - num_months * group_size + 1
+            total_expected_cols = num_months * group_size
             
-            from openpyxl.utils import get_column_letter
-
+            # ✅ 校验列数
+            if len(summary_preview.columns) < total_expected_cols:
+                st.error(f"❌ 当前 summary_preview 的列数 {len(summary_preview.columns)} 小于预期字段列数 {total_expected_cols}，请确认是否已添加每月字段。")
+                return
+            
+            start_col = len(summary_preview.columns) - total_expected_cols + 1
+            
+            # ✅ 合并 header
             yellow_fill = PatternFill("solid", fgColor="FFFF00")
             align_center = Alignment(horizontal="center", vertical="center")
             font_bold = Font(bold=True)
             
-            # 执行合并与写入
             col = start_col
             for i in range(num_months):
                 month = (start_month + i - 1) % 12 + 1
@@ -287,7 +289,7 @@ class PivotProcessor:
                 cell.alignment = align_center
                 cell.font = font_bold
                 col += group_size
-
+            
 
 
 
