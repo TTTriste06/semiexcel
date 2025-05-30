@@ -379,7 +379,7 @@ class PivotProcessor:
 
                 # ✅ 将 df_plan 的列按顺序填入 summary_preview
                 for i, col in enumerate(back_cols_in_summary):
-                    summary_preview[col] = arrival_by_month.iloc[:, i]
+                    summary_preview[col] = arrival_by_month.iloc[:, i+1]
             
                 st.success("✅ 回货实际已写入 summary_preview")
 
