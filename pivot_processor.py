@@ -331,46 +331,7 @@ class PivotProcessor:
                         )
 
 
-                # 提取原始数据
-                df_arrival = additional_sheets.get("赛卓-到货明细", pd.DataFrame())
-                df_arrival = df_arrival[["到货日期", "品名", "允收数量"]].copy()
                 
-                # 应用映射（你已有 apply_mapping_and_merge + apply_extended_substitute_mapping 函数）
-                df_arrival, keys_main = apply_mapping_and_merge(df_arrival, mapping_df, FIELD_MAPPINGS["赛卓-到货明细"])
-                df_arrival, _ = apply_extended_substitute_mapping(df_arrival, mapping_df, FIELD_MAPPINGS["赛卓-到货明细"], keys_main)
-                
-                # 清理：只保留汇总中存在的品名
-                valid_names = set(summary_preview["品名"].astype(str))
-                df_arrival["品名"] = df_arrival["品名"].astype(str)
-                df_arrival = df_arrival[df_arrival["品名"].isin(valid_names)]
-                
-                # 初始化结果表
-                arrival_by_month = pd.DataFrame()
-                arrival_by_month["品名"] = df_arrival["品名"].unique()
-                arrival_by_month.set_index("品名", inplace=True)
-                
-                for m in forecast_months:
-                    col_name = f"{m}月到货数量"
-                    arrival_by_month[col_name] = 0  # 初始化为 0
-                
-                # 遍历记录
-                df_arrival["到货月份"] = pd.to_datetime(df_arrival["到货日期"], errors="coerce").dt.month
-                
-                for idx, row in df_arrival.iterrows():
-                    part = row["品名"]
-                    qty = row["允收数量"]
-                    month = row["到货月份"]
-                    if month in forecast_months:
-                        col = f"{month}月到货数量"
-                        if part in arrival_by_month.index:
-                            arrival_by_month.loc[part, col] += qty
-                
-                arrival_by_month.reset_index(inplace=True)
-
-                st.write(arrival_by_month)
-
-
-
                
      
 
