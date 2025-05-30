@@ -268,7 +268,8 @@ class PivotProcessor:
             # 合并列的起始列索引（从 1 开始）
             start_col = len(summary_preview.columns) - num_months * group_size + 1
             
-            
+            from openpyxl.utils import get_column_letter
+
             yellow_fill = PatternFill("solid", fgColor="FFFF00")
             align_center = Alignment(horizontal="center", vertical="center")
             font_bold = Font(bold=True)
