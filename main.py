@@ -1,3 +1,13 @@
+import streamlit as st
+from io import BytesIO
+from datetime import datetime
+import pandas as pd
+from pivot_processor import PivotProcessor
+from ui import setup_sidebar, get_uploaded_files
+from github_utils import upload_to_github, download_from_github
+from urllib.parse import quote
+
+
 def main():
     st.set_page_config(page_title="Excel数据透视汇总工具", layout="wide")
     setup_sidebar()
@@ -77,3 +87,6 @@ def main():
                             st.error(f"无法读取工作表 `{sheet_name}`: {e}")
         except Exception as e:
             st.warning(f"⚠️ 预览 Excel 报告失败：{e}")
+
+if __name__ == "__main__":
+    main()
