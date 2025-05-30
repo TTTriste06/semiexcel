@@ -294,14 +294,7 @@ class PivotProcessor:
 
 
 
-            
-
-
-
-                # ✅ 颜色定义
-                red_fill = PatternFill("solid", fgColor="FF0000")
-                yellow_fill = PatternFill("solid", fgColor="FFFF00")
-                orange_fill = PatternFill("solid", fgColor="FFA500")
+    
                 
                 # ✅ 只选 summary 中的“成品投单计划”列（排除半成品）
                 plan_cols_in_summary = [col for col in summary_preview.columns if "成品投单计划" in col and "半成品" not in col]
@@ -315,6 +308,47 @@ class PivotProcessor:
                         summary_preview[col] = df_plan.iloc[:, i]
                 
                     st.success("✅ 成品投单计划已写入 summary_preview")
+
+
+
+
+                df_semi_plan = pd.DataFrame(index=summary_preview.index)
+
+                for idx, month in enumerate(forecast_months[:-1]):  # 最后一个月不用生成
+                    this_month = f"{month}月"
+                    prev_month = f"{forecast_months[idx - 1]}月" if idx > 0 else None
+                
+                    col_target = f"{this_month}_半成品投单计划"
+                    col_actual_semi = f"{this_month}_半成品实际投单"
+                    col_target_prev = f"{prev_month}_半成品投单计划" if prev_month else None
+                    col_plan_full = f"{this_month}_成品投单计划"
+                
+                    if idx == 0:
+                        # 第一个月：成品投单计划 - 半成品在制
+                        df_semi_plan[col_target] = (
+                            safe_col(summary_preview, col_plan_full) -
+                            safe_col(summary_preview, "半成品在制")
+                        )
+                    else:
+                        # 后续月份
+                        df_semi_plan[col_target] = (
+                            safe_col(summary_preview, col_plan_full) +
+                            (safe_col(df_semi_plan, col_target_prev) - safe_col(summary_preview, col_actual_semi))
+                        )
+                st.write(df_semi_plan)
+
+                # 找到 summary 中所有包含“半成品投单计划”的列（排除“成品”前缀的）
+                semi_plan_cols_in_summary = [col for col in summary_preview.columns if "半成品投单计划" in col]
+                
+                # 数量校验
+                if len(semi_plan_cols_in_summary) != df_semi_plan.shape[1]:
+                    st.error(f"❌ 半成品投单计划列数不匹配：df_semi_plan 有 {df_semi_plan.shape[1]} 列，汇总中有 {len(semi_plan_cols_in_summary)} 列")
+                else:
+                    for i, col in enumerate(semi_plan_cols_in_summary):
+                        summary_preview[col] = df_semi_plan.iloc[:, i]
+                    st.success("✅ 半成品投单计划已成功写入 summary_preview")
+                
+                                
 
 
 
