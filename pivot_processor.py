@@ -335,23 +335,21 @@ class PivotProcessor:
 
 
 
-        
+                # 回货实际
                 # ✅ 提取原始数据
                 df_arrival = additional_sheets.get("赛卓-到货明细", pd.DataFrame())
                 df_arrival = df_arrival[["到货日期", "品名", "允收数量"]].copy()
-                st.write("1")
                 
                 # ✅ （可选映射）跳过暂不启用
                 # df_arrival, keys_main = apply_mapping_and_merge(df_arrival, mapping_df, FIELD_MAPPINGS["赛卓-到货明细"])
                 # df_arrival, _ = apply_extended_substitute_mapping(df_arrival, mapping_df, FIELD_MAPPINGS["赛卓-到货明细"], keys_main)
                 
-                st.write("2")
+    
                 
                 # ✅ 清理：只保留汇总中存在的品名
                 valid_names = set(summary_preview["品名"].astype(str))
                 df_arrival["品名"] = df_arrival["品名"].astype(str)
                 df_arrival = df_arrival[df_arrival["品名"].isin(valid_names)]
-                st.write("3")
                 
                 # ✅ 初始化结果表，第一列来自 summary_preview 的品名（跳过第一行 header）
                 arrival_by_month = pd.DataFrame()
@@ -363,7 +361,6 @@ class PivotProcessor:
                 
                 # ✅ 计算每条记录的到货月份
                 df_arrival["到货月份"] = pd.to_datetime(df_arrival["到货日期"], errors="coerce").dt.month
-                st.write("4")
                 
                 # ✅ 遍历并累加到目标月份列中
                 for idx, row in df_arrival.iterrows():
@@ -375,11 +372,18 @@ class PivotProcessor:
                         match_idx = arrival_by_month[arrival_by_month["品名"] == part].index
                         if not match_idx.empty:
                             arrival_by_month.loc[match_idx[0], col] += qty
+
+
+                back_cols_in_summary = [col for col in summary_preview.columns if "回货实际" in col]
                 
-                st.write("5")
-                
-                # ✅ 输出结果
-                st.write(arrival_by_month)
+
+                # ✅ 将 df_plan 的列按顺序填入 summary_preview
+                for i, col in enumerate(back_cols_in_summary):
+                    summary_preview[col] = arrival_by_month.iloc[:, i]
+            
+                st.success("✅ 回货实际已写入 summary_preview")
+
+
 
                 
 
