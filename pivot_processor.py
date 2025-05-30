@@ -332,7 +332,7 @@ class PivotProcessor:
 
 
 
-                """
+        
                 # 提取原始数据
                 df_arrival = additional_sheets.get("赛卓-到货明细", pd.DataFrame())
                 df_arrival = df_arrival[["到货日期", "品名", "允收数量"]].copy()
@@ -382,7 +382,7 @@ class PivotProcessor:
                 arrival_by_month.reset_index(inplace=True)
                 
                 st.write(arrival_by_month)
-                """
+                
 
                 
                
