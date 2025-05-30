@@ -38,7 +38,6 @@ from summary import (
     append_product_in_progress
 )
 from append_summary import append_forecast_unmatched_to_summary_by_keys
-from production_plan import insert_repeated_headers
 
 
 FIELD_MAPPINGS = {
@@ -216,33 +215,21 @@ class PivotProcessor:
             summary_preview = reorder_summary_columns(summary_preview)
             summary_preview.to_excel(writer, sheet_name="汇总", index=False)
             adjust_column_width(writer, "汇总", summary_preview)
-
-
-
-            # 提取所有预测列中出现的月份
+            ws = writer.sheets["汇总"]
+            
+            # 👇 插入重复表头 + 月份合并标题
+            ws.insert_rows(1, amount=2)
             month_pattern = re.compile(r"(\d{1,2})月预测")
             forecast_months = []
-            
             for col in summary_preview.columns:
                 match = month_pattern.match(str(col))
                 if match:
                     forecast_months.append(int(match.group(1)))
+            start_month = datetime.today().month
+            end_month = max(forecast_months) - 1 if forecast_months else start_month
+            self._insert_monthly_headers(ws, len(summary_preview.columns) + 1, start_month, end_month)
             
-            if forecast_months:
-                latest_month = max(forecast_months) - 1  # 要生成到预测的“前一个月”
-            else:
-                latest_month = datetime.today().month
 
-
-            # 添加在 save 汇总前
-            ws = writer.sheets["汇总"]
-            
-            # 在顶部插入 2 行
-            ws.insert_rows(1, amount=2)
-            
-            # 获取预测区结束月份
-            today_month = datetime.today().month
-            insert_repeated_headers(ws, start_col=len(summary_preview.columns) + 1, start_month=today_month, end_month=latest_month)
 
 
             header_row = list(summary_preview.columns)
@@ -372,3 +359,40 @@ class PivotProcessor:
             st.info(f"📅 合并历史数据至：{CONFIG['selected_month']}")
             pivoted = process_history_columns(pivoted, config, CONFIG["selected_month"])
         return pivoted
+
+def _insert_monthly_headers(self, ws, start_col: int, start_month: int, end_month: int):
+    """
+    在汇总表的指定列起，插入每月重复的字段组，并在上一行合并单元格写月份。
+    """
+    HEADER_TEMPLATE = [
+        "销售数量", "销售金额", "成品投单计划", "半成品投单计划", "投单计划周期",
+        "成品可行投单", "半成品可行投单", "成品实际投单", "半成品实际投单",
+        "回货计划", "回货计划调整", "PC回货计划", "回货实际"
+    ]
+
+    yellow_fill = PatternFill("solid", fgColor="FFFF00")
+    center_bold = Alignment(horizontal="center", vertical="center")
+    font_bold = Font(bold=True)
+
+    col = start_col
+    for m in range(start_month, end_month + 1):
+        # 合并上层月份单元格
+        start_letter = get_column_letter(col)
+        end_letter = get_column_letter(col + len(HEADER_TEMPLATE) - 1)
+        merge_range = f"{start_letter}1:{end_letter}1"
+        ws.merge_cells(merge_range)
+        ws.cell(row=1, column=col).value = f"{m}月"
+        ws.cell(row=1, column=col).fill = yellow_fill
+        ws.cell(row=1, column=col).alignment = center_bold
+        ws.cell(row=1, column=col).font = font_bold
+
+        # 写入每月字段
+        for i, field in enumerate(HEADER_TEMPLATE):
+            cell = ws.cell(row=2, column=col + i)
+            cell.value = field
+            cell.fill = yellow_fill
+            cell.alignment = center_bold
+            cell.font = font_bold
+
+        col += len(HEADER_TEMPLATE)
+
