@@ -25,8 +25,7 @@ from excel_utils import (
     get_column_index_by_name
 )
 from mapping_utils import (
-    apply_mapping_and_merge, 
-    apply_mapping_and_merge_forecast, 
+    apply_mapping_and_merge,
     apply_extended_substitute_mapping
 )
 from month_selector import process_history_columns
@@ -152,7 +151,7 @@ class PivotProcessor:
                 if "赛卓-预测" in additional_sheets:
                     forecast_df = additional_sheets["赛卓-预测"]
                     forecast_df = clean_df(forecast_df)
-                    forecast_df, keys_main = apply_mapping_and_merge_forecast(forecast_df, mapping_df, FIELD_MAPPINGS["赛卓-预测"])
+                    forecast_df, keys_main = apply_mapping_and_merge(forecast_df, mapping_df, FIELD_MAPPINGS["赛卓-预测"])
                     ## forecast_df, keys_sub = apply_extended_substitute_mapping(forecast_df, mapping_df, FIELD_MAPPINGS["赛卓-预测"], keys_main)
                     # forecast_df = merge_duplicate_rows_by_key(forecast_df, FIELD_MAPPINGS["赛卓-预测"])
                     # all_mapped_keys.update(keys_main)
