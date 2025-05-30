@@ -211,7 +211,7 @@ class PivotProcessor:
 
                 summary_preview = clean_df(summary_preview)
                 summary_preview = summary_preview.drop_duplicates(subset=["晶圆品名", "规格", "品名"]).reset_index(drop=True)
-                summary_preview = merge_duplicate_product_names(summary_preview)
+                # summary_preview = merge_duplicate_product_names(summary_preview)
                 summary_preview = reorder_summary_columns(summary_preview)
 
 
