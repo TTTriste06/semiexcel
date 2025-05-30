@@ -230,7 +230,8 @@ class PivotProcessor:
                 # 确定添加月份范围
                 start_month = today_month
                 end_month = max(forecast_months) - 1 if forecast_months else start_month
-                
+
+                st.write(start_month, end_month)
                 # ✅ 在 summary_preview 中添加每月字段列（全部初始化为空或0）
                 for m in range(start_month, end_month + 1):
                     for header in HEADER_TEMPLATE:
