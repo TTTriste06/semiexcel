@@ -15,32 +15,33 @@ def insert_repeated_headers(ws, start_col: int, start_month: int, end_month: int
     插入合并的月份 header 与重复的 field header。
     """
     yellow_fill = PatternFill("solid", fgColor="FFFF00")
-    bold_center = Alignment(horizontal="center", vertical="center")
-    font = Font(bold=True)
+    align_center = Alignment(horizontal="center", vertical="center")
+    font_bold = Font(bold=True)
 
-    current_col = start_col
+    col = start_col
     for m in range(start_month, end_month + 1):
-        # 合并单元格（上层月份名）
-        merge_range = f"{get_column_letter(current_col)}1:{get_column_letter(current_col + len(HEADER_TEMPLATE) - 1)}1"
-        ws.merge_cells(merge_range)
-        ws.cell(row=1, column=current_col).value = f"{m}月"
-        ws.cell(row=1, column=current_col).fill = yellow_fill
-        ws.cell(row=1, column=current_col).alignment = bold_center
-        ws.cell(row=1, column=current_col).font = font
+        # 写上方月份合并单元格（第1行）
+        start_letter = get_column_letter(col)
+        end_letter = get_column_letter(col + len(HEADER_TEMPLATE) - 1)
+        ws.merge_cells(f"{start_letter}1:{end_letter}1")
+        cell = ws.cell(row=1, column=col)
+        cell.value = f"{m}月"
+        cell.fill = yellow_fill
+        cell.alignment = align_center
+        cell.font = font_bold
 
-        # 第二行写入模板字段
-        for i, header in enumerate(HEADER_TEMPLATE):
-            cell = ws.cell(row=2, column=current_col + i)
-            cell.value = header
+        # 写字段 header（第2行）
+        for i, name in enumerate(HEADER_TEMPLATE):
+            cell = ws.cell(row=2, column=col + i)
+            cell.value = name
             cell.fill = yellow_fill
-            cell.alignment = bold_center
-            cell.font = font
+            cell.alignment = align_center
+            cell.font = font_bold
 
-        current_col += len(HEADER_TEMPLATE)
+            # 可选：设置列宽为12
+            ws.column_dimensions[get_column_letter(col + i)].width = 12
 
-
-
-
+        col += len(HEADER_TEMPLATE)
 
 
 
