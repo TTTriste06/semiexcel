@@ -246,8 +246,9 @@ class PivotProcessor:
 
 
                 def safe_col(df, col):
-                    return df[col] if col in df.columns else pd.Series(0, index=df.index)
-
+                    if col not in df.columns:
+                        return pd.Series(0, index=df.index)
+                    return pd.to_numeric(df[col], errors="coerce").fillna(0)
 
 
 
