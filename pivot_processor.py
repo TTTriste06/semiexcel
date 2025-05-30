@@ -360,39 +360,39 @@ class PivotProcessor:
             pivoted = process_history_columns(pivoted, config, CONFIG["selected_month"])
         return pivoted
 
-def _insert_monthly_headers(self, ws, start_col: int, start_month: int, end_month: int):
-    """
-    在汇总表的指定列起，插入每月重复的字段组，并在上一行合并单元格写月份。
-    """
-    HEADER_TEMPLATE = [
-        "销售数量", "销售金额", "成品投单计划", "半成品投单计划", "投单计划周期",
-        "成品可行投单", "半成品可行投单", "成品实际投单", "半成品实际投单",
-        "回货计划", "回货计划调整", "PC回货计划", "回货实际"
-    ]
-
-    yellow_fill = PatternFill("solid", fgColor="FFFF00")
-    center_bold = Alignment(horizontal="center", vertical="center")
-    font_bold = Font(bold=True)
-
-    col = start_col
-    for m in range(start_month, end_month + 1):
-        # 合并上层月份单元格
-        start_letter = get_column_letter(col)
-        end_letter = get_column_letter(col + len(HEADER_TEMPLATE) - 1)
-        merge_range = f"{start_letter}1:{end_letter}1"
-        ws.merge_cells(merge_range)
-        ws.cell(row=1, column=col).value = f"{m}月"
-        ws.cell(row=1, column=col).fill = yellow_fill
-        ws.cell(row=1, column=col).alignment = center_bold
-        ws.cell(row=1, column=col).font = font_bold
-
-        # 写入每月字段
-        for i, field in enumerate(HEADER_TEMPLATE):
-            cell = ws.cell(row=2, column=col + i)
-            cell.value = field
-            cell.fill = yellow_fill
-            cell.alignment = center_bold
-            cell.font = font_bold
-
-        col += len(HEADER_TEMPLATE)
-
+    def _insert_monthly_headers(self, ws, start_col: int, start_month: int, end_month: int):
+        """
+        在汇总表的指定列起，插入每月重复的字段组，并在上一行合并单元格写月份。
+        """
+        HEADER_TEMPLATE = [
+            "销售数量", "销售金额", "成品投单计划", "半成品投单计划", "投单计划周期",
+            "成品可行投单", "半成品可行投单", "成品实际投单", "半成品实际投单",
+            "回货计划", "回货计划调整", "PC回货计划", "回货实际"
+        ]
+    
+        yellow_fill = PatternFill("solid", fgColor="FFFF00")
+        center_bold = Alignment(horizontal="center", vertical="center")
+        font_bold = Font(bold=True)
+    
+        col = start_col
+        for m in range(start_month, end_month + 1):
+            # 合并上层月份单元格
+            start_letter = get_column_letter(col)
+            end_letter = get_column_letter(col + len(HEADER_TEMPLATE) - 1)
+            merge_range = f"{start_letter}1:{end_letter}1"
+            ws.merge_cells(merge_range)
+            ws.cell(row=1, column=col).value = f"{m}月"
+            ws.cell(row=1, column=col).fill = yellow_fill
+            ws.cell(row=1, column=col).alignment = center_bold
+            ws.cell(row=1, column=col).font = font_bold
+    
+            # 写入每月字段
+            for i, field in enumerate(HEADER_TEMPLATE):
+                cell = ws.cell(row=2, column=col + i)
+                cell.value = field
+                cell.fill = yellow_fill
+                cell.alignment = center_bold
+                cell.font = font_bold
+    
+            col += len(HEADER_TEMPLATE)
+    
