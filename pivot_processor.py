@@ -284,7 +284,6 @@ class PivotProcessor:
                     "赛卓-安全库存": unmatched_safety,
                     "赛卓-未交订单": unmatched_unfulfilled,
                     "赛卓-预测": unmatched_forecast,
-                    "汇总": unmatched_forecast,
                     "赛卓-成品库存": unmatched_finished,
                     "赛卓-成品在制": unmatched_in_progress,
                 }
@@ -304,6 +303,8 @@ class PivotProcessor:
                             mark_unmatched_keys_on_name(ws, unmatched_keys, name_col=col_idx)
                         else:
                             st.warning(f"⚠️ `{sheet_name}` 中未找到字段 `{field_name}`，跳过未匹配标记")
+
+                mark_unmatched_keys_on_name(writer.sheets["汇总"], unmatched_forecast, name_col=3)
 
 
                 """
