@@ -46,4 +46,4 @@ def get_uploaded_files():
     # 🚀 生成按钮
     start = st.button("🚀 生成汇总 Excel")
 
-    return uploaded_files, forecast_file, safety_file, mapping_file, arrival_file, order_file, sales_file, start
+    return uploaded_dict, forecast_file, safety_file, mapping_file, arrival_file, order_file, sales_file, start
