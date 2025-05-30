@@ -245,6 +245,8 @@ class PivotProcessor:
 
 
 
+                def safe_col(df, col):
+                    return df[col] if col in df.columns else pd.Series(0, index=df.index)
 
 
 
@@ -256,7 +258,7 @@ class PivotProcessor:
                     next_month = f"{forecast_months[idx + 1]}月"
                     prev_month = f"{forecast_months[idx - 1]}月" if idx > 0 else None
                 
-                    # 构建所需列名
+                    # 构造字段名
                     col_forecast_this = f"{month}月预测"
                     col_order_this = f"未交订单数量_2025-{month}"
                     col_forecast_next = f"{forecast_months[idx + 1]}月预测"
@@ -266,35 +268,29 @@ class PivotProcessor:
                     col_target_prev = f"{prev_month}_成品投单计划" if prev_month else None
                 
                     if idx == 0:
-                        # 第一个月的特殊算法
+                        # 第一个月：特殊算法
                         df_plan[col_target] = (
-                            summary_preview.get("InvPart", 0).fillna(0) +
+                            safe_col(summary_preview, "InvPart") +
                             pd.DataFrame({
-                                "f": summary_preview.get(col_forecast_this, 0),
-                                "o": summary_preview.get(col_order_this, 0)
+                                "f": safe_col(summary_preview, col_forecast_this),
+                                "o": safe_col(summary_preview, col_order_this)
                             }).max(axis=1) +
                             pd.DataFrame({
-                                "f": summary_preview.get(col_forecast_next, 0),
-                                "o": summary_preview.get(col_order_next, 0)
+                                "f": safe_col(summary_preview, col_forecast_next),
+                                "o": safe_col(summary_preview, col_order_next)
                             }).max(axis=1) -
-                            summary_preview.get("数量_成品仓", 0).fillna(0) -
-                            summary_preview.get("成品在制", 0).fillna(0)
+                            safe_col(summary_preview, "数量_成品仓") -
+                            safe_col(summary_preview, "成品在制")
                         )
                     else:
-                        # 后续月份
-                        col_forecast_after = f"{forecast_months[idx + 1]}月预测"
-                        col_order_after = f"未交订单数量_2025-{forecast_months[idx + 1]}"
-                
                         df_plan[col_target] = (
                             pd.DataFrame({
-                                "f": summary_preview.get(col_forecast_after, 0),
-                                "o": summary_preview.get(col_order_after, 0)
+                                "f": safe_col(summary_preview, col_forecast_next),
+                                "o": safe_col(summary_preview, col_order_next)
                             }).max(axis=1) +
-                            (
-                                summary_preview.get(col_target_prev, 0).fillna(0) -
-                                summary_preview.get(col_actual_prod, 0).fillna(0)
-                            )
+                            (safe_col(df_plan, col_target_prev) - safe_col(summary_preview, col_actual_prod))
                         )
+
 
 
                     st.write(df_plan)
