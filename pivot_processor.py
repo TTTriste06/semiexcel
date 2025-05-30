@@ -206,6 +206,36 @@ class PivotProcessor:
                     summary_preview, unmatched_in_progress = append_product_in_progress(summary_preview, product_in_progress, mapping_df)
                     st.success("✅ 已合并成品在制")
 
+
+                HEADER_TEMPLATE = [
+                    "销售数量", "销售金额", "成品投单计划", "半成品投单计划", "投单计划周期",
+                    "成品可行投单", "半成品可行投单", "成品实际投单", "半成品实际投单",
+                    "回货计划", "回货计划调整", "PC回货计划", "回货实际"
+                ]
+
+
+                # 在保存 summary_preview 前插入：
+                today_month = datetime.today().month
+                month_pattern = re.compile(r"(\d{1,2})月预测")
+                forecast_months = []
+                
+                for col in summary_preview.columns:
+                    match = month_pattern.match(str(col))
+                    if match:
+                        forecast_months.append(int(match.group(1)))
+                
+                # 确定添加月份范围
+                start_month = today_month
+                end_month = max(forecast_months) - 1 if forecast_months else start_month
+                
+                # ✅ 在 summary_preview 中添加每月字段列（全部初始化为空或0）
+                for m in range(start_month, end_month + 1):
+                    for header in HEADER_TEMPLATE:
+                        new_col = f"{m}月_{header}"
+                        summary_preview[new_col] = ""
+                
+
+
             except Exception as e:
                 st.error(f"❌ 汇总数据合并失败: {e}")
                 return
@@ -218,38 +248,7 @@ class PivotProcessor:
             adjust_column_width(writer, "汇总", summary_preview)
 
 
-            # 提取所有预测列中出现的月份
-            month_pattern = re.compile(r"(\d{1,2})月预测")
-            forecast_months = []
-            
-            for col in summary_preview.columns:
-                match = month_pattern.match(str(col))
-                if match:
-                    forecast_months.append(int(match.group(1)))
-            
-            if forecast_months:
-                latest_month = max(forecast_months) - 1  # 要生成到预测的“前一个月”
-            else:
-                latest_month = datetime.today().month
-
-
-            # 添加在 save 汇总前
             ws = writer.sheets["汇总"]
-            
-            # 在顶部插入 2 行
-            ws.insert_rows(1, amount=2)
-            
-            # 获取预测区结束月份
-            today_month = datetime.today().month
-            insert_repeated_headers(ws, start_col=len(summary_preview.columns) + 1, start_month=today_month, end_month=latest_month)
-            
-            
-                        
-            
-           
-
-
-
             header_row = list(summary_preview.columns)
             unfulfilled_cols = [col for col in header_row if "未交订单数量" in col or col in ("总未交订单", "历史未交订单数量")]
             forecast_cols = [col for col in header_row if "预测" in col]
