@@ -312,6 +312,10 @@ class PivotProcessor:
 
 
 
+
+
+                
+
                 df_semi_plan = pd.DataFrame(index=summary_preview.index)
 
                 plan_cols = df_plan.columns.tolist()  # 如 ['5月_成品投单计划', '6月_成品投单计划', ...]
@@ -322,25 +326,9 @@ class PivotProcessor:
                         df_semi_plan[col.replace("成品投单计划", "半成品投单计划")] = (
                             df_plan[col] - safe_col(summary_preview, "半成品在制")
                         )
-                    else:
-                        prev_plan_col = plan_cols[i - 1]
-                        prev_feasible_col = prev_plan_col.replace("成品投单计划", "成品可行投单")
-                        df_semi_plan[col.replace("成品投单计划", "半成品投单计划")] = (
-                            df_plan[col] + (df_plan[prev_plan_col] - safe_col(summary_preview, prev_feasible_col))
-                        )
 
                 st.write(df_semi_plan)
-
-                semi_plan_cols_in_summary = [col for col in summary_preview.columns if "半成品投单计划" in col]
-
-                if len(semi_plan_cols_in_summary) != df_semi_plan.shape[1]:
-                    st.error(f"❌ 半成品列数不匹配：df_semi_plan 有 {df_semi_plan.shape[1]} 列，summary 有 {len(semi_plan_cols_in_summary)} 列")
-                else:
-                    for i, col in enumerate(semi_plan_cols_in_summary):
-                        summary_preview[col] = df_semi_plan.iloc[:, i]
-                    st.success("✅ 半成品投单计划写入成功 ✅")
-
-                                
+     
 
 
 
@@ -352,9 +340,30 @@ class PivotProcessor:
             adjust_column_width(writer, "汇总", summary_preview)
 
 
+
+
+
+            semi_plan_cols_in_summary = [col for col in summary_preview.columns if "半成品投单计划" in col]
             ws = writer.sheets["汇总"]
-
-
+            
+            for i, col in enumerate(semi_plan_cols_in_summary):
+                col_idx = summary_preview.columns.get_loc(col) + 1  # 1-based Excel column index
+                col_letter = get_column_letter(col_idx)
+            
+                for row in range(3, len(summary_preview) + 3):  # 数据从第3行开始
+                    cell = ws.cell(row=row, column=col_idx)
+            
+                    if i == 0:
+                        # 第一个月：填入真实数值
+                        cell.value = df_semi_plan.iloc[row - 3, 0]
+                    else:
+                        # 后续月份：填入公式
+                        prev_col_letter = get_column_letter(col_idx - 1)
+                        col_13_back = get_column_letter(col_idx - 13)
+                        col_8_back = get_column_letter(col_idx - 8)
+                        formula = f"={prev_col_letter}{row} + ({col_13_back}{row} - {col_8_back}{row})"
+                        cell.value = formula
+            
 
 
 
