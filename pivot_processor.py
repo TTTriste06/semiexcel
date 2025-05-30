@@ -231,7 +231,7 @@ class PivotProcessor:
                 # ✅ 在 summary_preview 中添加每月字段列（全部初始化为空或0）
                 for m in range(start_month, end_month + 1):
                     for header in HEADER_TEMPLATE:
-                        new_col = f"{m}月_{header}"
+                        new_col = f"{header}"
                         summary_preview[new_col] = ""
                 
 
@@ -249,6 +249,47 @@ class PivotProcessor:
 
 
             ws = writer.sheets["汇总"]
+
+           
+            # 确定要合并的月份范围
+            month_pattern = re.compile(r"(\d{1,2})月预测")
+            forecast_months = []
+            for col in summary_preview.columns:
+                match = month_pattern.match(str(col))
+                if match:
+                    forecast_months.append(int(match.group(1)))
+                    
+            start_month = datetime.today().month
+            end_month = max(forecast_months) - 1 if forecast_months else start_month
+            num_months = end_month - start_month + 1
+            
+            # 每月字段组大小
+            group_size = 13
+            # 合并列的起始列索引（从 1 开始）
+            start_col = len(summary_preview.columns) - num_months * group_size + 1
+            
+            
+            yellow_fill = PatternFill("solid", fgColor="FFFF00")
+            align_center = Alignment(horizontal="center", vertical="center")
+            font_bold = Font(bold=True)
+            
+            # 执行合并与写入
+            col = start_col
+            for i in range(num_months):
+                month = (start_month + i - 1) % 12 + 1
+                start_letter = get_column_letter(col)
+                end_letter = get_column_letter(col + group_size - 1)
+                ws.merge_cells(f"{start_letter}1:{end_letter}1")
+                cell = ws.cell(row=1, column=col)
+                cell.value = f"{month}月"
+                cell.fill = yellow_fill
+                cell.alignment = align_center
+                cell.font = font_bold
+                col += group_size
+
+
+
+
             header_row = list(summary_preview.columns)
             unfulfilled_cols = [col for col in header_row if "未交订单数量" in col or col in ("总未交订单", "历史未交订单数量")]
             forecast_cols = [col for col in header_row if "预测" in col]
