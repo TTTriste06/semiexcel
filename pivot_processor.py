@@ -356,7 +356,7 @@ class PivotProcessor:
             for i, col in enumerate(semi_plan_cols_in_summary):
                 col_idx = summary_preview.columns.get_loc(col) + 1  # 1-based Excel column index
                 col_letter = get_column_letter(col_idx)
-                st.write(i,col,col_idx,col_letter)
+                
             
                 for row in range(3, len(summary_preview) + 3):  # 数据从第3行开始
                     cell = ws.cell(row=row, column=col_idx)
@@ -370,6 +370,7 @@ class PivotProcessor:
                         col_13_back = get_column_letter(col_idx - 13)
                         col_8_back = get_column_letter(col_idx - 8)
                         formula = f"={prev_col_letter}{row} + ({col_13_back}{row} - {col_8_back}{row})"
+                        st.write(formula)
                         cell.value = formula
             
 
