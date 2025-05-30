@@ -231,11 +231,11 @@ def merge_duplicate_rows_by_key(df: pd.DataFrame, field_map: dict, verbose=True)
         for idx, row in dup_keys.iterrows():
             key_values = tuple(row[col] for col in key_cols)
             # st.write(f"🔁 主键组：{key_values}")
-            st.dataframe(df[
-                (df[key_cols[0]] == key_values[0]) &
-                (df[key_cols[1]] == key_values[1]) &
-                (df[key_cols[2]] == key_values[2])
-            ])
+            #st.dataframe(df[
+            #    (df[key_cols[0]] == key_values[0]) &
+            #    (df[key_cols[1]] == key_values[1]) &
+            #    (df[key_cols[2]] == key_values[2])
+            #])
 
     # 数值列合并
     value_cols = [col for col in df.columns if col not in key_cols and pd.api.types.is_numeric_dtype(df[col])]
