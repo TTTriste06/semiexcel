@@ -356,13 +356,15 @@ class PivotProcessor:
                 st.write("3")
                 
                 # 初始化结果表
-                arrival_by_month = pd.DataFrame()
-                arrival_by_month["品名"] = df_arrival["品名"].unique()
-                arrival_by_month.set_index("品名", inplace=True)
+                # 使用 summary_preview["品名"] 顺序构建 index（确保与主表一致，且所有品名都保留）
+                arrival_by_month = pd.DataFrame(index=summary_preview["品名"].astype(str))
                 
                 for m in forecast_months:
                     col_name = f"{m}月到货数量"
                     arrival_by_month[col_name] = 0  # 初始化为 0
+                
+                arrival_by_month.index.name = "品名"
+
 
                 st.write("4")
                 
