@@ -225,6 +225,7 @@ class PivotProcessor:
                         forecast_months.append(int(match.group(1)))
 
                 st.write(forecast_months)
+                st.write(len(forecast_months))
                 
                 # 确定添加月份范围
                 start_month = today_month
