@@ -250,8 +250,9 @@ class PivotProcessor:
 
             ws = writer.sheets["汇总"]
 
-           
-            # 预测月份范围
+
+
+            # 提取预测月份
             month_pattern = re.compile(r"(\d{1,2})月预测")
             forecast_months = []
             for col in summary_preview.columns:
@@ -261,18 +262,25 @@ class PivotProcessor:
             
             start_month = datetime.today().month
             end_month = max(forecast_months) - 1 if forecast_months else start_month
+            
+            # ✅ 修复点：防止负数月份范围
+            if end_month < start_month:
+                st.warning(f"⚠️ 最大预测月份 {end_month} 小于当前月份 {start_month}，跳过月份标题合并")
+                return
+            
             num_months = end_month - start_month + 1
             group_size = 13
             total_expected_cols = num_months * group_size
             
-            # ✅ 校验列数
             if len(summary_preview.columns) < total_expected_cols:
-                st.error(f"❌ 当前 summary_preview 的列数 {len(summary_preview.columns)} 小于预期字段列数 {total_expected_cols}，请确认是否已添加每月字段。")
+                st.error(f"❌ 汇总表列数 {len(summary_preview.columns)} 小于每月字段期望列数 {total_expected_cols}")
                 return
             
             start_col = len(summary_preview.columns) - total_expected_cols + 1
             
-            # ✅ 合并 header
+            from openpyxl.utils import get_column_letter
+            from openpyxl.styles import PatternFill, Alignment, Font
+            
             yellow_fill = PatternFill("solid", fgColor="FFFF00")
             align_center = Alignment(horizontal="center", vertical="center")
             font_bold = Font(bold=True)
@@ -286,9 +294,7 @@ class PivotProcessor:
                 cell = ws.cell(row=1, column=col)
                 cell.value = f"{month}月"
                 cell.fill = yellow_fill
-                cell.alignment = align_center
-                cell.font = font_bold
-                col += group_size
+                cell.alignment
             
 
 
