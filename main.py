@@ -3,7 +3,7 @@ def main():
     setup_sidebar()
 
     # 获取上传文件（包括新增的 3 个明细文件）
-    uploaded_files, forecast_file, safety_file, mapping_file, arrival_file, order_file, sales_file, start = get_uploaded_files()
+    uploaded_dict, forecast_file, safety_file, mapping_file, arrival_file, order_file, sales_file, start = get_uploaded_files()
 
     if start:
         if len(uploaded_files) < 5:
