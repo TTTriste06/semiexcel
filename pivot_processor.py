@@ -392,8 +392,52 @@ class PivotProcessor:
                         col_13_back = get_column_letter(col_idx - 15)
                         col_8_back = get_column_letter(col_idx - 12)
                         formula = f"={prev_col_letter}{row} + ({col_13_back}{row} - {col_8_back}{row})"
+                        cell.value = formula
+
+
+
+            # 回货计划
+            return_plan_cols_in_summary = [col for col in summary_preview.columns if "回货计划" in col and "调整" not in col]
+            
+            for i, col in enumerate(return_plan_cols_in_summary):
+                col_idx = summary_preview.columns.get_loc(col) + 1  # 1-based Excel column index
+                col_letter = get_column_letter(col_idx)
+                
+            
+                for row in range(3, len(summary_preview) + 3):  # 数据从第3行开始
+                    cell = ws.cell(row=row, column=col_idx)
+            
+                    if i == 0:
+                        cell.value = ""
+                    else:
+                        # 后续月份：填入公式
+                        prev_col_letter = get_column_letter(col_idx - 18)
+                        formula = f"={prev_col_letter}{row}"
+                        cell.value = formula
+
+
+            # 回货计划调整
+            adjust_return_plan_cols_in_summary = [col for col in summary_preview.columns if "回货计划调整" in col]
+            
+            for i, col in enumerate(adjust_return_plan_cols_in_summary):
+                col_idx = summary_preview.columns.get_loc(col) + 1  # 1-based Excel column index
+                col_letter = get_column_letter(col_idx)
+                
+            
+                for row in range(3, len(summary_preview) + 3):  # 数据从第3行开始
+                    cell = ws.cell(row=row, column=col_idx)
+            
+                    if i == 0:
+                        cell.value = ""
+                    else:
+                        # 后续月份：填入公式
+                        prev_col_letter = get_column_letter(col_idx - 1)
+                        col_13_back = get_column_letter(col_idx - 16)
+                        col_8_back = get_column_letter(col_idx - 19)
+                        formula = f"={prev_col_letter}{row} + ({col_13_back}{row} - {col_8_back}{row})"
                         
                         cell.value = formula
+            
             
 
 
