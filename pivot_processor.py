@@ -215,7 +215,34 @@ class PivotProcessor:
             summary_preview = reorder_summary_columns(summary_preview)
             summary_preview.to_excel(writer, sheet_name="汇总", index=False)
             adjust_column_width(writer, "汇总", summary_preview)
+
+
+
+            # 提取所有预测列中出现的月份
+            month_pattern = re.compile(r"(\d{1,2})月预测")
+            forecast_months = []
+            
+            for col in summary_preview.columns:
+                match = month_pattern.match(str(col))
+                if match:
+                    forecast_months.append(int(match.group(1)))
+            
+            if forecast_months:
+                latest_month = max(forecast_months) - 1  # 要生成到预测的“前一个月”
+            else:
+                latest_month = datetime.today().month
+
+
+            # 添加在 save 汇总前
             ws = writer.sheets["汇总"]
+            
+            # 在顶部插入 2 行
+            ws.insert_rows(1, amount=2)
+            
+            # 获取预测区结束月份
+            today_month = datetime.today().month
+            insert_repeated_headers(ws, start_col=len(summary_preview.columns) + 1, start_month=today_month, end_month=latest_month)
+
 
             header_row = list(summary_preview.columns)
             unfulfilled_cols = [col for col in header_row if "未交订单数量" in col or col in ("总未交订单", "历史未交订单数量")]
