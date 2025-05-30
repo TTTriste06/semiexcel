@@ -246,9 +246,9 @@ class PivotProcessor:
 
 
                 def safe_col(df, col):
-                    if col not in df.columns:
-                        return pd.Series(0, index=df.index)
-                    return pd.to_numeric(df[col], errors="coerce").fillna(0)
+                    # 返回确保是 float 的 Series，字符串将被转为 NaN，再用 0 替代
+                    return pd.to_numeric(df[col], errors="coerce").fillna(0) if col in df.columns else pd.Series(0, index=df.index)
+
 
 
 
