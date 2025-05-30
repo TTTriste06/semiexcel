@@ -237,49 +237,22 @@ class PivotProcessor:
                 start_month = today_month
                 end_month = max(forecast_months) - 1 if forecast_months else start_month
 
-                # 初始化样式
-                yellow_fill = PatternFill("solid", fgColor="FFFF00")
-                align_center = Alignment(horizontal="center", vertical="center")
-                font_bold = Font(bold=True)
-                
-                
-                # 添加列并记录每个月新增字段的起始位置
-                new_month_col_start = []
+               # ✅ 在 summary_preview 中添加每月字段列（全部初始化为空或0）
                 for m in range(start_month, end_month + 1):
-                    first_col_index = len(summary_preview.columns) + 1  # pandas写入excel时是从1开始计列
-                    new_month_col_start.append((m, first_col_index))  # 保存月份和起始列位置
                     for header in HEADER_TEMPLATE:
-                        new_col = f"{header}"
+                        new_col = f"{m}_{header}"
                         summary_preview[new_col] = ""
-                
-                # ---- 写入 summary_preview 到 Excel 后，进行合并 ----
-                summary_preview.to_excel(writer, sheet_name="汇总", index=False)
-                adjust_column_width(writer, "汇总", summary_preview)
-                
-                # 合并刚添加的每月字段头部的第一行，写月份标签
-                ws = writer.sheets["汇总"]
-                
-                for m, start_col in new_month_col_start:
-                    start_letter = get_column_letter(start_col)
-                    end_letter = get_column_letter(start_col + len(HEADER_TEMPLATE) - 1)
-                    ws.merge_cells(f"{start_letter}1:{end_letter}1")
-                    cell = ws.cell(row=1, column=start_col)
-                    cell.value = f"{m}月"
-                    cell.fill = yellow_fill
-                    cell.alignment = align_center
-                    cell.font = font_bold
-
 
 
             except Exception as e:
                 st.error(f"❌ 汇总数据合并失败: {e}")
                 return
 
-            # summary_preview.to_excel(writer, sheet_name="汇总", index=False)
-            # adjust_column_width(writer, "汇总", summary_preview)
+            summary_preview.to_excel(writer, sheet_name="汇总", index=False)
+            adjust_column_width(writer, "汇总", summary_preview)
 
 
-            # ws = writer.sheets["汇总"]
+            ws = writer.sheets["汇总"]
 
 
 
