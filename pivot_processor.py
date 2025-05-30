@@ -237,11 +237,64 @@ class PivotProcessor:
                 start_month = today_month
                 end_month = max(forecast_months) - 1 if forecast_months else start_month
 
-               # ✅ 在 summary_preview 中添加每月字段列（全部初始化为空或0）
+                # ✅ 在 summary_preview 中添加每月字段列（全部初始化为空或0）
                 for m in range(start_month, end_month + 1):
                     for header in HEADER_TEMPLATE:
                         new_col = f"{m}_{header}"
                         summary_preview[new_col] = ""
+
+
+
+
+
+                for idx, month in enumerate(forecast_months[:-1]):  # 最后一个月不用生成
+                    this_month = f"{month}月"
+                    next_month = f"{forecast_months[idx + 1]}月"
+                    prev_month = f"{forecast_months[idx - 1]}月" if idx > 0 else None
+                
+                    # 构造字段名
+                    col_forecast_this = f"{month}月预测"
+                    col_order_this = f"未交订单数量_2025-{month}"
+                    col_forecast_next = f"{forecast_months[idx + 1]}月预测"
+                    col_order_next = f"未交订单数量_2025-{forecast_months[idx + 1]}"
+                    col_target = f"{this_month}_成品投单计划"
+                    col_actual_prod = f"{this_month}_成品实际投单"
+                    col_target_prev = f"{prev_month}_成品投单计划" if prev_month else None
+                
+                    if col_target not in summary_preview.columns:
+                        continue
+                
+                    if idx == 0:
+                        # 第一个月公式
+                        summary_preview[col_target] = (
+                            summary_preview.get("InvPart", 0).fillna(0) +
+                            pd.DataFrame({
+                                "f": summary_preview.get(col_forecast_this, 0),
+                                "o": summary_preview.get(col_order_this, 0)
+                            }).max(axis=1) +
+                            pd.DataFrame({
+                                "f": summary_preview.get(col_forecast_next, 0),
+                                "o": summary_preview.get(col_order_next, 0)
+                            }).max(axis=1) -
+                            summary_preview.get("数量_成品仓", 0).fillna(0) -
+                            summary_preview.get("成品在制", 0).fillna(0)
+                        )
+                    else:
+                        # 后续月份
+                        col_forecast_after = f"{forecast_months[idx + 1]}月预测"
+                        col_order_after = f"未交订单数量_2025-{forecast_months[idx + 1]}"
+                
+                        summary_preview[col_target] = (
+                            pd.DataFrame({
+                                "f": summary_preview.get(col_forecast_after, 0),
+                                "o": summary_preview.get(col_order_after, 0)
+                            }).max(axis=1) +
+                            (
+                                summary_preview.get(col_target_prev, 0).fillna(0) -
+                                summary_preview.get(col_actual_prod, 0).fillna(0)
+                            )
+                        )
+
 
 
             except Exception as e:
