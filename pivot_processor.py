@@ -297,18 +297,59 @@ class PivotProcessor:
                     st.write(df_plan)
 
 
-                    # ✅ 第一步：找到 summary_preview 中所有包含“成品投单计划”的列
-                    plan_cols_in_summary = [col for col in summary_preview.columns if "成品投单计划" in col]
-                    
-                    # ✅ 第二步：确保 df_plan 列与之数量一致
-                    if len(plan_cols_in_summary) != df_plan.shape[1]:
-                        st.error(f"❌ 成品投单计划列数不一致：df_plan 有 {df_plan.shape[1]} 列，汇总中有 {len(plan_cols_in_summary)} 列")
-                    else:
-                        # ✅ 第三步：按顺序将 df_plan 中的列值写入 summary_preview
-                        for i, col in enumerate(plan_cols_in_summary):
-                            summary_preview[col] = df_plan.iloc[:, i]
-                    
-                        st.success("✅ 成品投单计划已成功写入 summary_preview")
+
+                # ✅ 颜色定义
+                red_fill = PatternFill("solid", fgColor="FF0000")
+                yellow_fill = PatternFill("solid", fgColor="FFFF00")
+                orange_fill = PatternFill("solid", fgColor="FFA500")
+                
+                # ✅ 只选 summary 中的“成品投单计划”列（排除半成品）
+                plan_cols_in_summary = [col for col in summary_preview.columns if "成品投单计划" in col and "半成品" not in col]
+                
+                # ✅ 数量校验
+                if len(plan_cols_in_summary) != df_plan.shape[1]:
+                    st.error(f"❌ 写入失败：df_plan 有 {df_plan.shape[1]} 列，summary 中有 {len(plan_cols_in_summary)} 个 '成品投单计划' 列")
+                else:
+                    # ✅ 将 df_plan 的列按顺序填入 summary_preview
+                    for i, col in enumerate(plan_cols_in_summary):
+                        summary_preview[col] = df_plan.iloc[:, i]
+                
+                    st.success("✅ 成品投单计划已写入 summary_preview")
+                
+                    # ✅ 获取 worksheet
+                    ws = writer.sheets["汇总"]
+                
+                    # ✅ 为每个“成品投单计划”列，按行标记颜色
+                    for col_name in plan_cols_in_summary:
+                        if col_name not in summary_preview.columns:
+                            continue
+                
+                        # 获取该列在 worksheet 中的列号（1-based）
+                        col_idx = summary_preview.columns.get_loc(col_name) + 1
+                
+                        for row_idx in range(3, len(summary_preview) + 3):  # 数据行从第3行起
+                            cell = ws.cell(row=row_idx, column=col_idx)
+                            value = cell.value
+                
+                            try:
+                                value = float(value)
+                            except:
+                                continue  # 无法转换为数值则跳过
+                
+                            # 获取对应的安全库存
+                            inv_col = summary_preview.columns.get_loc("InvPart") + 1
+                            inv_value = ws.cell(row=row_idx, column=inv_col).value
+                            try:
+                                inv_value = float(inv_value)
+                            except:
+                                inv_value = 0
+                
+                            if value < 0:
+                                cell.fill = red_fill
+                            elif value < inv_value:
+                                cell.fill = yellow_fill
+                            elif value > 2 * inv_value:
+                                cell.fill = orange_fill
 
 
 
