@@ -476,7 +476,7 @@ class PivotProcessor:
                             order_plan_by_month.loc[match_idx[0], col] += qty
                 
                 # ✅ 找出 summary 中对应的列并填入
-                order_cols_in_summary = [col for col in summary_preview.columns if "成品实际投单" in col]
+                order_cols_in_summary = [col for col in summary_preview.columns if "成品实际投单" in col and "半成品" not in col]
                 
                 for i, col in enumerate(order_cols_in_summary):
                     if i + 1 < order_plan_by_month.shape[1]:
