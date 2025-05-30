@@ -16,7 +16,7 @@ from excel_utils import (
     merge_header_for_summary, 
     mark_unmatched_keys_on_sheet,
     mark_keys_on_sheet,
-    merge_duplicate_product_names,
+    delete_duplicate_product_names,
     merge_duplicate_rows_by_key,
     clean_key_fields,
     mark_unmatched_keys_on_name,
@@ -211,7 +211,7 @@ class PivotProcessor:
 
                 summary_preview = clean_df(summary_preview)
                 summary_preview = summary_preview.drop_duplicates(subset=["晶圆品名", "规格", "品名"]).reset_index(drop=True)
-                # summary_preview = merge_duplicate_product_names(summary_preview)
+                # summary_preview = delete_duplicate_product_names(summary_preview)
                 summary_preview = reorder_summary_columns(summary_preview)
 
 
