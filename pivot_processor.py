@@ -294,7 +294,7 @@ class PivotProcessor:
 
 
 
-                    st.write(df_plan)
+            
 
 
 
@@ -336,6 +336,49 @@ class PivotProcessor:
             unfulfilled_cols = [col for col in header_row if "未交订单数量" in col or col in ("总未交订单", "历史未交订单数量")]
             forecast_cols = [col for col in header_row if "预测" in col]
             finished_cols = [col for col in header_row if col in ("数量_HOLD仓", "数量_成品仓", "数量_半成品仓")]
+
+
+
+
+            
+            # ✅ 获取 worksheet
+        
+            # ✅ 为每个“成品投单计划”列，按行标记颜色
+            for col_name in plan_cols_in_summary:
+                if col_name not in summary_preview.columns:
+                    continue
+        
+                # 获取该列在 worksheet 中的列号（1-based）
+                col_idx = summary_preview.columns.get_loc(col_name) + 1
+        
+                for row_idx in range(3, len(summary_preview) + 3):  # 数据行从第3行起
+                    cell = ws.cell(row=row_idx, column=col_idx)
+                    value = cell.value
+        
+                    try:
+                        value = float(value)
+                    except:
+                        continue  # 无法转换为数值则跳过
+        
+                    # 获取对应的安全库存
+                    inv_col = summary_preview.columns.get_loc("InvPart") + 1
+                    inv_value = ws.cell(row=row_idx, column=inv_col).value
+                    try:
+                        inv_value = float(inv_value)
+                    except:
+                        inv_value = 0
+        
+                    if value < 0:
+                        cell.fill = red_fill
+                    elif value < inv_value:
+                        cell.fill = yellow_fill
+                    elif value > 2 * inv_value:
+                        cell.fill = orange_fill
+
+
+
+
+            
 
             merge_header_for_summary(
                 ws, summary_preview,
