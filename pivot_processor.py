@@ -116,7 +116,7 @@ class PivotProcessor:
                         df, mapped_keys = apply_mapping_and_merge(df, mapping_df, FIELD_MAPPINGS[sheet_name])
                         df, keys_sub = apply_extended_substitute_mapping(df, mapping_df, FIELD_MAPPINGS[sheet_name], None)
                         df = clean_key_fields(df, FIELD_MAPPINGS[sheet_name])
-                        df = merge_duplicate_rows_by_key(df, FIELD_MAPPINGS[sheet_name])
+                        #df = merge_duplicate_rows_by_key(df, FIELD_MAPPINGS[sheet_name])
                         all_mapped_keys.update(mapped_keys)
 
                         if sheet_name == "赛卓-未交订单":
@@ -173,7 +173,7 @@ class PivotProcessor:
                     df_safety = clean_df(df_safety)
                     df_safety, keys_main = apply_mapping_and_merge(df_safety, mapping_df, FIELD_MAPPINGS["赛卓-安全库存"])
                     df_safety, keys_sub = apply_extended_substitute_mapping(df_safety, mapping_df, FIELD_MAPPINGS["赛卓-安全库存"], keys_main)
-                    df_safety = merge_duplicate_rows_by_key(df_safety, FIELD_MAPPINGS["赛卓-安全库存"])
+                    # df_safety = merge_duplicate_rows_by_key(df_safety, FIELD_MAPPINGS["赛卓-安全库存"])
                     # all_mapped_keys.update(keys_main)
                     # all_mapped_keys.update(keys_sub)
                     summary_preview, unmatched_safety = merge_safety_inventory(summary_preview, df_safety)
